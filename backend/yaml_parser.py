@@ -1,0 +1,196 @@
+import os
+import re
+
+class MicroserviceTopics:
+    def __init__(self):
+        #duplicates are not allowed
+        self.produces = set()
+        self.subscribes = set()
+
+class YamlParser:
+    TOPIC_PATTERN = re.compile(r"([^.]+)\.([^.]+)\.(.*?)(?:\.event|$)")
+    DOC_TOPIC_PATTERN = re.compile(r"\*\*topic:\*\*\s*'([^']+)'")
+
+    def __init__(self, base_dir):
+        self.base_directory = base_dir
+        self.config_directory = os.path.join(base_dir, "deployment", "config")
+        self.doc_directory = os.path.join(base_dir, "doc")
+        self.microservice_topics_map = {}
+
+    def process_all_microservices(self):
+        self.process_subscription_configs()
+        self.process_producer_docs()
+
+    def process_subscription_configs(self):
+        if not os.path.isdir(self.config_directory):
+            raise IOError(f"Config directory does not exist: {self.config_directory}")
+        for filename in os.listdir(self.config_directory):
+            if filename.endswith(".yaml") or filename.endswith(".yml"):
+                self.process_subscription_config(os.path.join(self.config_directory, filename))
+
+    def process_subscription_config(self, filepath):
+        service_name = None
+        consumed_topics = []
+        topic_map = {}
+
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            in_consumer_section = False
+            in_topics_section = False
+            in_topic_definition_section = False
+
+            for i, line in enumerate(lines):
+                line = line.strip()
+
+                if line.startswith("spring:"):
+                    in_topic_definition_section = False
+
+                if service_name is None and line.startswith("name:"):
+                    service_name = line[5:].strip().replace("-service", "")
+
+                if line == "topics:":
+                    in_topic_definition_section = True
+                    in_consumer_section = False
+                    continue
+
+                if in_topic_definition_section and "event:" in line:
+                    topic_path = line.split(":", 1)[1].strip()
+                    topic_key = line.split(":", 1)[0].strip()
+                    parent_context = ""
+                    # 5 satir geriye kadar parent contexti ara.
+                    for j in range(max(0, i-5), i)[::-1]:
+                        prev_line = lines[j].strip()
+                        if prev_line.endswith(":") and prev_line.find(prev_line.strip()) < line.find(line.strip()):
+                            parent_context = prev_line.replace(":", "")
+                            break
+                    topic_variable = f"topics.{parent_context + '.' if parent_context else ''}{topic_key}"
+                    topic_map[topic_variable] = topic_path
+
+                if line.startswith("consumers:"):
+                    in_consumer_section = True
+                    in_topic_definition_section = False
+                    continue
+
+                if in_consumer_section and line.startswith("topics:"):
+                    in_topics_section = True
+                    continue
+
+                if in_consumer_section and in_topics_section and line.startswith("-"):
+                    topic = line[1:].strip()
+                    consumed_topics.append(topic)
+
+                if in_topics_section and line and not line.startswith("-") and not line.startswith(" "):
+                    in_topics_section = False
+                if in_consumer_section and line and not line.startswith(" "):
+                    in_consumer_section = False
+                if in_topic_definition_section and line and not line.startswith(" "):
+                    in_topic_definition_section = False
+
+            if service_name:
+                if service_name not in self.microservice_topics_map:
+                    self.microservice_topics_map[service_name] = MicroserviceTopics()
+                for topic in consumed_topics:
+                    actual_topic = topic
+                    if topic.startswith("${") and topic.endswith("}"):
+                        topic_var = topic[2:-1]
+                        actual_topic = topic_map.get(topic_var, "")
+                    if actual_topic:
+                        microservice_name = self.extract_microservice_name_from_topic(actual_topic)
+                        if microservice_name:
+                            self.microservice_topics_map[service_name].subscribes.add(microservice_name)
+        except Exception as e:
+            print(f"Error processing config file {filepath}: {e}")
+
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+            if not service_name:
+                match = re.search(r"name:\s*([\w-]+)", content)
+                if match:
+                    service_name = match.group(1).replace("-service", "")
+            if not service_name:
+                filename = os.path.basename(filepath)
+                service_name = filename[:filename.rfind(".")].replace("-service", "").replace("-", "")
+            if service_name:
+                if service_name not in self.microservice_topics_map:
+                    self.microservice_topics_map[service_name] = MicroserviceTopics()
+                for topic_match in re.finditer(r"\$\{topics\.(\w+)\.event\}", content):
+                    subscribed_service = topic_match.group(1)
+                    self.microservice_topics_map[service_name].subscribes.add(subscribed_service)
+        except Exception as e:
+            print(f"Error with regex parsing for {filepath}: {e}")
+
+    def process_producer_docs(self):
+        if not os.path.isdir(self.doc_directory):
+            raise IOError(f"Documentation directory does not exist: {self.doc_directory}")
+        for filename in os.listdir(self.doc_directory):
+            if filename.endswith(".yaml") or filename.endswith(".yml"):
+                self.process_producer_doc(os.path.join(self.doc_directory, filename))
+
+    def process_producer_doc(self, filepath):
+        filename = os.path.basename(filepath)
+        service_name = filename[:filename.rfind(".")].replace("-service", "").replace("-", "")
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+            for match in self.DOC_TOPIC_PATTERN.finditer(content):
+                topic = match.group(1)
+                produced_microservice_name = self.extract_microservice_name_from_topic(topic)
+                if produced_microservice_name:
+                    if service_name not in self.microservice_topics_map:
+                        self.microservice_topics_map[service_name] = MicroserviceTopics()
+                    self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
+        except Exception as e:
+            print(f"Error processing doc file {filepath}: {e}")
+
+    #X.microserviceadi.event olarak dusunup mikroservis isimlerini buradan cekiyoruz.
+    def extract_microservice_name_from_topic(self, topic):
+        match = self.TOPIC_PATTERN.match(topic)
+        if match:
+            return match.group(2)
+        return None
+
+    def build_dependency_graph(self):
+        dependencies = {service: set() for service in self.microservice_topics_map}
+        for consumer, topics in self.microservice_topics_map.items():
+            for subscribed in topics.subscribes:
+                for producer, prod_topics in self.microservice_topics_map.items():
+                    if producer == consumer:
+                        continue
+                    if subscribed in prod_topics.produces:
+                        dependencies[consumer].add(producer)
+        return dependencies
+
+    def get_all_microservice_names(self):
+        return set(self.microservice_topics_map.keys())
+
+    def get_microservice_topic_map(self):
+        return self.microservice_topics_map
+    
+    def get_total_dependency_count(self):
+        dependencies = self.build_dependency_graph()
+        return sum(len(dep_set) for dep_set in dependencies.values())
+
+# test
+if __name__ == "__main__":
+    base_dir = "c:\\Users\\hakim\\Desktop\\ecommerce-platform"
+    parser = YamlParser(base_dir)
+    parser.process_all_microservices()
+    print("Lamine Yaml xD")
+    for name in parser.get_all_microservice_names():
+        topics = parser.get_microservice_topic_map()[name]
+        print(f"{name}:")
+        print(f"  Produces topics for: {topics.produces}")
+        print(f"  Subscribes to topics from: {topics.subscribes}")
+    dependencies = parser.build_dependency_graph()
+    print("\n Microservice Dependencies:")
+    for service, deps in dependencies.items():
+        print(f"{service} depends on: {deps}")
+    
+    # Test için dependency count da yazdıralım
+    print(f"\nTotal dependency count: {parser.get_total_dependency_count()}")
+
+    print(dependencies)
+    

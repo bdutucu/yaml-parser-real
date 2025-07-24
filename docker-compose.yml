@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: yaml-parser-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - ./yaml_parser.py:/app/yaml_parser.py
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+    networks:
+      - yaml-parser-network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: yaml-parser-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - yaml-parser-network
+    restart: unless-stopped
+
+networks:
+  yaml-parser-network:
+    driver: bridge
+
+volumes:
+  uploads:
+    driver: local

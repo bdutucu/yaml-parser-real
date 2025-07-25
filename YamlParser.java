@@ -333,7 +333,7 @@ public class YamlParser {
 
     public static void main(String[] args) {
         try {
-            String baseDir = "c:\\Users\\hakim\\Desktop\\ecommerce-platform";
+            String baseDir = "C:\\Users\\hakim\\Desktop\\yaml-parser-real\\test";
             YamlParser parser = new YamlParser(baseDir);
             parser.processAllMicroservices();
 

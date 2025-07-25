@@ -1,7 +1,7 @@
 @echo off
-cd C:\Users\hakim\Desktop\yaml-parser-web-app\backend
+cd /d "%~dp0backend"
 start cmd /k "python app.py"
-cd C:\Users\hakim\Desktop\yaml-parser-web-app\frontend
+cd /d "%~dp0frontend"
 start cmd /k "npm start"
 echo you can close this window.
 pause

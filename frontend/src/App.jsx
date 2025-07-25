@@ -4,7 +4,7 @@ import MicroserviceList from "./components/MicroserviceList";
 import "./App.css";
 
 function App() {
-  const [directoryPath, setDirectoryPath] = useState("C:\\Users\\hakim\\Desktop\\ecommerce-platform");
+  const [directoryPath, setDirectoryPath] = useState("C:\\Users\\hakim\\Desktop\\yaml-parser-real\\test");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -88,7 +88,7 @@ function App() {
             value={directoryPath}
             onChange={(e) => setDirectoryPath(e.target.value)}
             placeholder="Enter full path to your project directory. Example: (C:\Users\username\my-project)"
-            defaultValue={"C:\\Users\\hakim\\Desktop\\ecommerce-platform"}
+            defaultValue={"C:\\Users\\hakim\\Desktop\\yaml-parser-real\\test"}
             //this value should be written by default.
             className="directory-input"
           />

@@ -9,7 +9,7 @@ class MicroserviceTopics:
 
 class YamlParser:
     TOPIC_PATTERN = re.compile(r"([^.]+)\.([^.]+)\.(.*?)(?:\.event|$)")
-    DOC_TOPIC_PATTERN = re.compile(r"\*\*topic:\*\*\s*'([^']+)'")
+    DOC_TOPIC_PATTERN = re.compile(r"\*\*topic:\*\*\s*'([^']+)'", re.IGNORECASE)
 
     def __init__(self, base_dir):
         self.base_directory = base_dir
@@ -175,7 +175,8 @@ class YamlParser:
 
 # test
 if __name__ == "__main__":
-    base_dir = "c:\\Users\\hakim\\Desktop\\ecommerce-platform"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.join(os.path.dirname(current_dir), "test")
     parser = YamlParser(base_dir)
     parser.process_all_microservices()
     print("Lamine Yaml xD")

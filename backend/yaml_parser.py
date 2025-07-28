@@ -9,7 +9,7 @@ class MicroserviceTopics:
 
 class YamlParser:
     TOPIC_PATTERN = re.compile(r"([^.]+)\.([^.]+)\.(.*?)(?:\.event|$)")
-    DOC_TOPIC_PATTERN = re.compile(r"\*\*topic:\*\*\s*'([^']+)'", re.IGNORECASE)
+    DOC_TOPIC_PATTERN = re.compile(r"\*\*[Tt]opic:\*\*\s*`([^`]+)`", re.IGNORECASE)
 
     def __init__(self, base_dir):
         self.base_directory = base_dir
@@ -194,4 +194,3 @@ if __name__ == "__main__":
     print(f"\nTotal dependency count: {parser.get_total_dependency_count()}")
 
     print(dependencies)
-    

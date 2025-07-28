@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  payment:
+    event: ecommerce.payment.event
+  order:
+    event: ecommerce.order.event
+
+consumers:
+  mainConsumer:
+    topics:
+      - ${topics.payment.event}
+  secondConsumer:
+    topics:
+      - ${topics.order.event}

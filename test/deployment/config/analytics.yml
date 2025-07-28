@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: analytics-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  analytics:
+    event: ecommerce.analytics.event
+  user:
+    event: ecommerce.user.event
+  order:
+    event: ecommerce.order.event
+  payment:
+    event: ecommerce.payment.event
+
+consumers:
+  analyticsConsumer:
+    topics:
+      - ${topics.user.event} # Analytics service consumes user events for user behavior analysis
+      - ${topics.order.event} # Analytics service consumes order events for sales analytics
+      - ${topics.payment.event} # Analytics service consumes payment events for revenue tracking
+      - ${topics.search.event} # Analytics service consumes analytics events for data enrichment and insights

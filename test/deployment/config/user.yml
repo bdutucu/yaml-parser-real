@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: user-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  user:
+    event: ecommerce.user.event
+  order:
+    event: ecommerce.order.event
+
+consumers:
+  userConsumer:
+    topics:
+      - ${topics.order.event} # User service might consume order events for user analytics

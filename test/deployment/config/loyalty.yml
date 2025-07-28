@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: loyalty-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  loyalty:
+    event: ecommerce.loyalty.event
+  user:
+    event: ecommerce.user.event
+  order:
+    event: ecommerce.order.event
+  payment:
+    event: ecommerce.payment.event
+
+consumers:
+  loyaltyConsumer:
+    topics:
+      - ${topics.user.event} # Loyalty service consumes user events for loyalty program enrollment
+      - ${topics.order.event} # Loyalty service consumes order events for points calculation
+      - ${topics.payment.event} # Loyalty service consumes payment events for reward distribution

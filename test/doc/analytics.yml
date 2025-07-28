@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  title: Analytics Service API
+  version: 1.0.0
+  description: API documentation for the Analytics Service, including domain events.
+
+servers:
+  - url: http://localhost:8086
+    description: Local Analytics Service
+
+paths:
+  /analytics/report-generated:
+    post:
+      tags:
+        - DomainEvent:
+            name: Analytics Events
+            description: Events published by the Analytics Service
+      summary: Analytics report generated event
+      description: |+
+        **topic:** `ecommerce.analytics.event`
+        This event is published when an analytics report is generated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reportId:
+                  type: string
+                reportType:
+                  type: string
+                  example: "SALES_REPORT"
+                timeRange:
+                  type: string
+                  example: "MONTHLY"
+                generatedAt:
+                  type: string
+                  format: date-time
+                dataPoints:
+                  type: integer
+                status:
+                  type: string
+                  example: "COMPLETED"
+      responses:
+        "202":
+          description: Event successfully acknowledged (this endpoint is for documentation purposes for produced events)

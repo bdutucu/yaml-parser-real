@@ -1,0 +1,51 @@
+openapi: 3.0.0
+info:
+  title: Review Service API
+  version: 1.0.0
+  description: API documentation for the Review Service, including domain events.
+
+servers:
+  - url: http://localhost:8089
+    description: Local Review Service
+
+paths:
+  /review/submitted:
+    post:
+      tags:
+        - DomainEvent:
+            name: Review Events
+            description: Events published by the Review Service
+      summary: Product review submitted event
+      description: |+
+        **topic:** `ecommerce.review.event`
+        This event is published when a customer submits a product review.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewId:
+                  type: string
+                productId:
+                  type: string
+                customerId:
+                  type: string
+                orderId:
+                  type: string
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+                submittedAt:
+                  type: string
+                  format: date-time
+                status:
+                  type: string
+                  example: "PUBLISHED"
+      responses:
+        '202':
+          description: Event successfully acknowledged (this endpoint is for documentation purposes for produced events)

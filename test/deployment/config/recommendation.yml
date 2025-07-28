@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: recommendation-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  recommendation:
+    event: ecommerce.recommendation.event
+  user:
+    event: ecommerce.user.event
+  order:
+    event: ecommerce.order.event
+  analytics:
+    event: ecommerce.analytics.event
+
+consumers:
+  recommendationConsumer:
+    topics:
+      - ${topics.user.event} # Recommendation service consumes user events for personalization
+      - ${topics.order.event} # Recommendation service consumes order events for purchase history
+      - ${topics.analytics.event} # Recommendation service consumes analytics events for ML models

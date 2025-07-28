@@ -1,0 +1,52 @@
+openapi: 3.0.0
+info:
+  title: Audit Service API
+  version: 1.0.0
+  description: API documentation for the Audit Service, including domain events.
+
+servers:
+  - url: http://localhost:8094
+    description: Local Audit Service
+
+paths:
+  /audit/activity-logged:
+    post:
+      tags:
+        - DomainEvent:
+            name: Audit Events
+            description: Events published by the Audit Service
+      summary: User activity logged event
+      description: |+
+        **topic:** `ecommerce.audit.event`
+        This event is published when a user activity is logged for audit purposes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auditId:
+                  type: string
+                userId:
+                  type: string
+                action:
+                  type: string
+                  example: "ORDER_PLACED"
+                resourceType:
+                  type: string
+                  example: "ORDER"
+                resourceId:
+                  type: string
+                ipAddress:
+                  type: string
+                userAgent:
+                  type: string
+                timestamp:
+                  type: string
+                  format: date-time
+                details:
+                  type: object
+      responses:
+        '202':
+          description: Event successfully acknowledged (this endpoint is for documentation purposes for produced events)

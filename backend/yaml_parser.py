@@ -135,15 +135,58 @@ class YamlParser:
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
+            
+            # Find all topic patterns with their positions
             for match in self.DOC_TOPIC_PATTERN.finditer(content):
                 topic = match.group(1)
-                produced_microservice_name = self.extract_microservice_name_from_topic(topic)
-                if produced_microservice_name:
-                    if service_name not in self.microservice_topics_map:
-                        self.microservice_topics_map[service_name] = MicroserviceTopics()
-                    self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
+                topic_position = match.start()
+                
+                # Check if this topic is within a domain event section
+                if self._is_in_domain_event_section(content, topic_position):
+                    produced_microservice_name = self.extract_microservice_name_from_topic(topic)
+                    if produced_microservice_name:
+                        if service_name not in self.microservice_topics_map:
+                            self.microservice_topics_map[service_name] = MicroserviceTopics()
+                        self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
         except Exception as e:
             print(f"Error processing doc file {filepath}: {e}")
+    
+    def _is_in_domain_event_section(self, content, topic_position):
+        """Check if the topic at the given position is in a domain event section"""
+        # pattern search ediyoruz normalde, ama **topic** yakaladıktan sonra hemen geriye bakacağız doğru tag de miyiz 
+        lines_before_topic = content[:topic_position].split('\n')
+        
+        # Search backwards for the nearest path definition and its tags
+        for i in range(len(lines_before_topic) - 1, -1, -1):
+            line = lines_before_topic[i].strip()
+            
+            # looking for a clean path :
+            if re.match(r'^\s*/[^:]*:\s*$', lines_before_topic[i]):
+        
+                lines_after_path = content[topic_position:].split('\n')
+                combined_lines = lines_before_topic[i:] + lines_after_path
+                
+                in_tags_section = False
+                tags_content = []
+                
+                for line_text in combined_lines:
+                    line_stripped = line_text.strip()
+                    
+                    if line_stripped == "tags:":
+                        in_tags_section = True
+                        continue
+                    
+                    if in_tags_section:
+                        
+                        if line_text and not line_text.startswith(' ') and not line_text.startswith('\t'):
+                            break
+                        tags_content.append(line_stripped)
+                
+                #  find any tag contains "domain event" not case sensitive
+                tags_text = ' '.join(tags_content).lower()
+                return 'domainevent' in tags_text.replace(' ', '') or 'domain event' in tags_text
+        
+        return False
 
     #X.microserviceadi.event olarak dusunup mikroservis isimlerini buradan cekiyoruz.
     def extract_microservice_name_from_topic(self, topic):
@@ -193,4 +236,7 @@ if __name__ == "__main__":
     # Test için dependency count da yazdıralım
     print(f"\nTotal dependency count: {parser.get_total_dependency_count()}")
 
-    print(dependencies)
+    print("\nAll microservice names:")
+    print(parser.get_all_microservice_names())
+
+    #print(dependencies)

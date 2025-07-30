@@ -24,9 +24,13 @@ class YamlParser:
     def process_subscription_configs(self):
         if not os.path.isdir(self.config_directory):
             raise IOError(f"Config directory does not exist: {self.config_directory}")
-        for filename in os.listdir(self.config_directory):
-            if filename.endswith(".yaml") or filename.endswith(".yml"):
-                self.process_subscription_config(os.path.join(self.config_directory, filename))
+        
+        # Recursively walk through all subdirectories in the config directory
+        for root, dirs, files in os.walk(self.config_directory):
+            for filename in files:
+                if filename.endswith(".yaml") or filename.endswith(".yml"):
+                    filepath = os.path.join(root, filename)
+                    self.process_subscription_config(filepath)
 
     def process_subscription_config(self, filepath):
         service_name = None
@@ -47,8 +51,8 @@ class YamlParser:
                 if line.startswith("spring:"):
                     in_topic_definition_section = False
 
-                if service_name is None and line.startswith("name:"):
-                    service_name = line[5:].strip().replace("-service", "")
+                filename = os.path.basename(filepath)
+                service_name = filename[:filename.rfind(".")].replace("-service", "").replace("-", "")
 
                 if line == "topics:":
                     in_topic_definition_section = True
@@ -125,9 +129,13 @@ class YamlParser:
     def process_producer_docs(self):
         if not os.path.isdir(self.doc_directory):
             raise IOError(f"Documentation directory does not exist: {self.doc_directory}")
-        for filename in os.listdir(self.doc_directory):
-            if filename.endswith(".yaml") or filename.endswith(".yml"):
-                self.process_producer_doc(os.path.join(self.doc_directory, filename))
+        
+        # recursively searcj the subdirectories.
+        for root, dirs, files in os.walk(self.doc_directory):
+            for filename in files:
+                if filename.endswith(".yaml") or filename.endswith(".yml"):
+                    filepath = os.path.join(root, filename)
+                    self.process_producer_doc(filepath)
 
     def process_producer_doc(self, filepath):
         filename = os.path.basename(filepath)
@@ -136,23 +144,23 @@ class YamlParser:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # Find all topic patterns with their positions
-            for match in self.DOC_TOPIC_PATTERN.finditer(content):
-                topic = match.group(1)
-                topic_position = match.start()
-                
-                # Check if this topic is within a domain event section
-                if self._is_in_domain_event_section(content, topic_position):
-                    produced_microservice_name = self.extract_microservice_name_from_topic(topic)
-                    if produced_microservice_name:
-                        if service_name not in self.microservice_topics_map:
-                            self.microservice_topics_map[service_name] = MicroserviceTopics()
-                        self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
+            # Only process if this service already exists in our microservice map (from config files)
+            if service_name in self.microservice_topics_map:
+                # Find all topic patterns with their positions
+                for match in self.DOC_TOPIC_PATTERN.finditer(content):
+                    topic = match.group(1)
+                    topic_position = match.start()
+                    
+                    # Check if this topic is within a domain event section
+                    if self._is_in_domain_event_section(content, topic_position):
+                        produced_microservice_name = self.extract_microservice_name_from_topic(topic)
+                        if produced_microservice_name:
+                            self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
         except Exception as e:
             print(f"Error processing doc file {filepath}: {e}")
     
     def _is_in_domain_event_section(self, content, topic_position):
-        """Check if the topic at the given position is in a domain event section"""
+        """check if the topic at the given position is in a domain event section"""
         # pattern search ediyoruz normalde, ama **topic** yakaladıktan sonra hemen geriye bakacağız doğru tag de miyiz 
         lines_before_topic = content[:topic_position].split('\n')
         
@@ -240,3 +248,14 @@ if __name__ == "__main__":
     print(parser.get_all_microservice_names())
 
     #print(dependencies)
+
+    # dependency ile ilgili aciklama
+    # The dependency graph is built by matching the microservices a service subscribes to
+    # (topics.subscribes) with the microservices that produce those topics (topics.produces).
+    # If a service subscribes to "example" but no microservice is found that produces "example",
+    # then no dependency is recorded. This can happen if:
+    # - No documentation file for "example" microservice exists in the doc directory,
+    # - Or the documentation does not declare any produced topics for "example",
+    # - Or the topic extraction logic does not match the topic name as expected.
+    # As a result, the user appears to subscribe to "example", but is not dependent on it
+    # in the dependency graph, because "example" is not found as a producer.

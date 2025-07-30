@@ -130,32 +130,101 @@ class YamlParser:
         if not os.path.isdir(self.doc_directory):
             raise IOError(f"Documentation directory does not exist: {self.doc_directory}")
         
-        # recursively searcj the subdirectories.
+        # collect all known microservice names from config processing
+        known_microservices = set(self.microservice_topics_map.keys())
+        
+        # recursively searching the subdirectories
         for root, dirs, files in os.walk(self.doc_directory):
             for filename in files:
                 if filename.endswith(".yaml") or filename.endswith(".yml"):
                     filepath = os.path.join(root, filename)
-                    self.process_producer_doc(filepath)
+                    
+                    matched_service = self._find_matching_microservice(filepath, known_microservices)
+                    if matched_service:
+                        self.process_producer_doc(filepath, matched_service)
 
-    def process_producer_doc(self, filepath):
-        filename = os.path.basename(filepath)
-        service_name = filename[:filename.rfind(".")].replace("-service", "").replace("-", "")
+    def _find_matching_microservice(self, doc_filepath, known_microservices):
+        """ we try really hard to match a doc file with a known microservice name with some "strategies" ( ;-;)"""
+        filename = os.path.basename(doc_filepath)
+        base_filename = filename[:filename.rfind(".")].replace("-service", "").replace("-", "").lower()
+        
+        # strategy 1: direct match
+        for ms_name in known_microservices:
+            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+            normalized_filename = base_filename.replace("_", "")
+            
+            if normalized_ms_name == normalized_filename:
+                return ms_name
+
+        # strategy 2: partial match -> if file_name.contains() microservice name
+        for ms_name in known_microservices:
+            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+            normalized_filename = base_filename.replace("_", "")
+            
+            if normalized_ms_name in normalized_filename or normalized_filename in normalized_ms_name:
+                return ms_name
+        
+        # strategy 3: check each word slicing the filename
+        filename_words = base_filename.replace("-", " ").replace("_", " ").split()
+        for ms_name in known_microservices:
+            ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
+            # if any significant word matches (length > 2  because it can be short prefixes like "ms", "api")
+            for ms_word in ms_words:
+                if len(ms_word) > 2 and ms_word in filename_words:
+                    return ms_name
+        
+        # strategy 4: try to find from yaml title >:(
+        try:
+            with open(doc_filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            
+            title_match = re.search(r'title:\s*([^\n]+)', content, re.IGNORECASE)
+            if title_match:
+                title = title_match.group(1).strip().strip('"').strip("'")
+                
+                normalized_title = title.lower().replace(" service", "").replace(" api", "").replace("-", "").replace("_", "").replace(" ", "")
+                
+                # direct match with title (hopefully)
+                for ms_name in known_microservices:
+                    normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+                    if normalized_ms_name == normalized_title:
+                        return ms_name
+                
+                # partial match with title
+                for ms_name in known_microservices:
+                    normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+                    if normalized_ms_name in normalized_title or normalized_title in normalized_ms_name:
+                        return ms_name
+                
+                # words matching with title
+                title_words = title.lower().replace("-", " ").replace("_", " ").split()
+                for ms_name in known_microservices:
+                    ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
+                    for ms_word in ms_words:
+                        if len(ms_word) > 2 and ms_word in title_words:
+                            return ms_name
+                        
+        except Exception as e:
+            print(f"Error reading title from {doc_filepath}: {e}")
+        
+        return None
+
+    def process_producer_doc(self, filepath, service_name):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # Only process if this service already exists in our microservice map (from config files)
-            if service_name in self.microservice_topics_map:
-                # Find all topic patterns with their positions
-                for match in self.DOC_TOPIC_PATTERN.finditer(content):
-                    topic = match.group(1)
-                    topic_position = match.start()
-                    
-                    # Check if this topic is within a domain event section
-                    if self._is_in_domain_event_section(content, topic_position):
-                        produced_microservice_name = self.extract_microservice_name_from_topic(topic)
-                        if produced_microservice_name:
-                            self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
+            # Find all topic patterns with their positions
+            for match in self.DOC_TOPIC_PATTERN.finditer(content):
+                topic = match.group(1)
+                topic_position = match.start()
+                
+                # Check if this topic is within a domain event section
+                if self._is_in_domain_event_section(content, topic_position):
+                    produced_microservice_name = self.extract_microservice_name_from_topic(topic)
+                    if produced_microservice_name:
+                        self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
         except Exception as e:
             print(f"Error processing doc file {filepath}: {e}")
     

@@ -18,8 +18,9 @@ const DependencyGraph = ({ dependencies, microservices, total_dependency_count})
         useMaxWidth: true,
         htmlLabels: true,
         curve: 'basis',
-        nodeSpacing: 100,
-        rankSpacing: 150
+        // spacing should be proportional to the square of dependency count. But the output was just not like as I expected. so I decided to use a logarithmic scale for spacing.
+        nodeSpacing: 40 * Math.log(microservices.length + 1),
+        rankSpacing: 60 * Math.log(microservices.length + 5)
       }
     });
 

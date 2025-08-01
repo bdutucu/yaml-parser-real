@@ -87,8 +87,10 @@ class YamlParser:
 
                 if in_topics_section and line and not line.startswith("-") and not line.startswith(" "):
                     in_topics_section = False
+
                 if in_consumer_section and line and not line.startswith(" "):
                     in_consumer_section = False
+
                 if in_topic_definition_section and line and not line.startswith(" "):
                     in_topic_definition_section = False
 
@@ -144,7 +146,7 @@ class YamlParser:
                         self.process_producer_doc(filepath, matched_service)
 
     def _find_matching_microservice(self, doc_filepath, known_microservices):
-        """ we try really hard to match a doc file with a known microservice name with some "strategies" ( ;-;)"""
+        """ we try hard to match a doc file with a known microservice name with some "strategies" ( ;-;)"""
         filename = os.path.basename(doc_filepath)
         base_filename = filename[:filename.rfind(".")].replace("-service", "").replace("-", "").lower()
         
@@ -215,16 +217,32 @@ class YamlParser:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
             
+            # Collect all known microservice names for matching
+            known_microservices = set(self.microservice_topics_map.keys())
+            
             # Find all topic patterns with their positions
             for match in self.DOC_TOPIC_PATTERN.finditer(content):
                 topic = match.group(1)
                 topic_position = match.start()
                 
-                # Check if this topic is within a domain event section
+              
                 if self._is_in_domain_event_section(content, topic_position):
-                    produced_microservice_name = self.extract_microservice_name_from_topic(topic)
-                    if produced_microservice_name:
-                        self.microservice_topics_map[service_name].produces.add(produced_microservice_name)
+                    extracted_microservice_name = self.extract_microservice_name_from_topic(topic)
+                    if extracted_microservice_name:
+                        # try to match the extracted name to a known microservice
+                        matched_microservice = self._match_extracted_name_to_microservice(
+                            extracted_microservice_name, 
+                            known_microservices, 
+                            filepath
+                        )
+                        
+                        if matched_microservice:
+                            self.microservice_topics_map[service_name].produces.add(matched_microservice)
+                            print(f"Matched topic '{topic}' -> extracted '{extracted_microservice_name}' -> microservice '{matched_microservice}'")
+                        else:
+                            # !!!! fallback !!!!! : use the original extracted name if no match found
+                            self.microservice_topics_map[service_name].produces.add(extracted_microservice_name)
+                            print(f"No match found for extracted microservice '{extracted_microservice_name}' from topic '{topic}', using original name")
         except Exception as e:
             print(f"Error processing doc file {filepath}: {e}")
     
@@ -233,7 +251,7 @@ class YamlParser:
         # pattern search ediyoruz normalde, ama **topic** yakaladıktan sonra hemen geriye bakacağız doğru tag de miyiz 
         lines_before_topic = content[:topic_position].split('\n')
         
-        # Search backwards for the nearest path definition and its tags
+        # search backwards for the nearest path definition and its tags
         for i in range(len(lines_before_topic) - 1, -1, -1):
             line = lines_before_topic[i].strip()
             
@@ -292,6 +310,102 @@ class YamlParser:
     def get_total_dependency_count(self):
         dependencies = self.build_dependency_graph()
         return sum(len(dep_set) for dep_set in dependencies.values())
+
+''' test '''
+    def _match_extracted_name_to_microservice(self, extracted_name, known_microservices, doc_filepath=None):
+        """If the topics in the /config directory were named properly, you wouldn't be reading this :)"""
+
+        if not extracted_name:
+            return None
+            
+        normalized_extracted = extracted_name.lower().replace("-", "").replace("_", "")
+
+
+        #strategy 0:
+        
+        # strategy 1: direct match
+        for ms_name in known_microservices:
+            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+            if normalized_ms_name == normalized_extracted:
+                return ms_name
+        
+        # strategy 2: partial match --> "contains() in java"
+        for ms_name in known_microservices:
+            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+            if normalized_ms_name in normalized_extracted or normalized_extracted in normalized_ms_name:
+                return ms_name
+
+        # strategy 3: remove numbers and try again (audit123 -> audit)
+        extracted_no_numbers = re.sub(r'\d+', '', normalized_extracted)
+        if extracted_no_numbers and len(extracted_no_numbers) > 2:
+            for ms_name in known_microservices:
+                normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+                ms_no_numbers = re.sub(r'\d+', '', normalized_ms_name)
+                
+                if extracted_no_numbers == ms_no_numbers:
+                    return ms_name
+                if extracted_no_numbers in ms_no_numbers or ms_no_numbers in extracted_no_numbers:
+                    return ms_name
+        
+        # dtrategy 4: use filepath information if available
+        if doc_filepath:
+            filename = os.path.basename(doc_filepath)
+            base_filename = filename[:filename.rfind(".")].replace("-service", "").replace("-", "").lower()
+            normalized_filename = base_filename.replace("_", "")
+            
+            # try to match extracted name with filename context
+            for ms_name in known_microservices:
+                normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+                
+                # if both extracted name and filename contain parts of the microservice name
+                if (normalized_extracted in normalized_ms_name or normalized_ms_name in normalized_extracted) and \
+                   (normalized_filename in normalized_ms_name or normalized_ms_name in normalized_filename):
+                    return ms_name
+                
+               
+                if normalized_ms_name == normalized_filename:
+                    
+                    common_chars = set(normalized_extracted) & set(normalized_ms_name)
+                    if len(common_chars) >= min(3, len(normalized_extracted) // 2):
+                        return ms_name
+
+            # now we try filename-based word matching combined with extracted name
+            filename_words = base_filename.replace("-", " ").replace("_", " ").split()
+            extracted_words = extracted_name.lower().replace("-", " ").replace("_", " ").split()
+            
+            for ms_name in known_microservices:
+                ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
+                
+                filename_matches = 0
+                extracted_matches = 0
+                
+                for ms_word in ms_words:
+                    if len(ms_word) > 2:
+                     
+                        for filename_word in filename_words:
+                            if len(filename_word) > 2 and (ms_word in filename_word or filename_word in ms_word):
+                                filename_matches += 1
+                        
+                  
+                        for extracted_word in extracted_words:
+                            if len(extracted_word) > 2 and (ms_word in extracted_word or extracted_word in ms_word):
+                                extracted_matches += 1
+                
+                # if we have matches from both filename and extracted name, it can be a good match
+                if filename_matches > 0 and extracted_matches > 0:
+                    return ms_name
+
+        # strategy 5: word based matching 
+        extracted_words = extracted_name.lower().replace("-", " ").replace("_", " ").split()
+        for ms_name in known_microservices:
+            ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
+            
+            # check if any significant word matches
+            for ms_word in ms_words:
+                if len(ms_word) > 3:
+                    for extracted_word in extracted_words:
+                        if len(extracted_word) > 3 and (ms_word in extracted_word or extracted_word in ms_word):
+                            return ms_name
 
 # test
 if __name__ == "__main__":

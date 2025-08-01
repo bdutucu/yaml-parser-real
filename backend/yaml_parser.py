@@ -311,7 +311,7 @@ class YamlParser:
         dependencies = self.build_dependency_graph()
         return sum(len(dep_set) for dep_set in dependencies.values())
 
-''' test '''
+    ''' test '''
     def _match_extracted_name_to_microservice(self, extracted_name, known_microservices, doc_filepath=None):
         """If the topics in the /config directory were named properly, you wouldn't be reading this :)"""
 

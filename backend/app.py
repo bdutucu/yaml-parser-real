@@ -98,7 +98,7 @@ def parse_yaml():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/generate-mermaid', methods=['POST'])
+@app.route('/generate-mermaid', methods=['POST'])
 def generate_mermaid():
     try:
         data = request.get_json()

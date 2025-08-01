@@ -22,7 +22,7 @@ function App() {
     try {
       const requestBody = { directory_path: directoryPath };
 
-      const response = await fetch("http://localhost:5000/parse", {
+      const response = await fetch("/api/parse", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

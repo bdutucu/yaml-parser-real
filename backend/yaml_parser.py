@@ -3,7 +3,6 @@ import re
 
 class MicroserviceTopics:
     def __init__(self):
-        #duplicates are not allowed
         self.produces = set()
         self.subscribes = set()
 
@@ -25,187 +24,190 @@ class YamlParser:
         if not os.path.isdir(self.config_directory):
             raise IOError(f"Config directory does not exist: {self.config_directory}")
         
-        # Recursively walk through all subdirectories in the config directory
-        for root, dirs, files in os.walk(self.config_directory):
+        for root, _, files in os.walk(self.config_directory):
             for filename in files:
-                if filename.endswith(".yaml") or filename.endswith(".yml"):
+                if filename.endswith((".yaml", ".yml")):
                     filepath = os.path.join(root, filename)
                     self.process_subscription_config(filepath)
 
     def process_subscription_config(self, filepath):
-        service_name = None
+        filename = os.path.basename(filepath)
+        service_name = filename[:filename.rfind(".")].replace("-service", "").replace("-", "")
+        
         consumed_topics = []
         topic_map = {}
 
         try:
             with open(filepath, "r", encoding="utf-8") as f:
-                lines = f.readlines()
+                content = f.read()
+                lines = content.splitlines()
 
-            in_consumer_section = False
-            in_topics_section = False
-            in_topic_definition_section = False
+            # Build topic map from topic definitions
+            self._build_topic_map(lines, topic_map)
+            
+            # Extract consumed topics from consumers section
+            self._extract_consumed_topics(lines, consumed_topics)
+            
+            # Extract topics from placeholders using regex
+            self._extract_placeholder_topics(content, topic_map, consumed_topics)
 
-            for i, line in enumerate(lines):
-                line = line.strip()
-
-                if line.startswith("spring:"):
-                    in_topic_definition_section = False
-
-                filename = os.path.basename(filepath)
-                service_name = filename[:filename.rfind(".")].replace("-service", "").replace("-", "")
-
-                if line == "topics:":
-                    in_topic_definition_section = True
-                    in_consumer_section = False
-                    continue
-
-                if in_topic_definition_section and "event:" in line:
-                    topic_path = line.split(":", 1)[1].strip()
-                    topic_key = line.split(":", 1)[0].strip()
-                    parent_context = ""
-                    # 5 satir geriye kadar parent contexti ara.
-                    for j in range(max(0, i-5), i)[::-1]:
-                        prev_line = lines[j].strip()
-                        if prev_line.endswith(":") and prev_line.find(prev_line.strip()) < line.find(line.strip()):
-                            parent_context = prev_line.replace(":", "")
-                            break
-                    topic_variable = f"topics.{parent_context + '.' if parent_context else ''}{topic_key}"
-                    topic_map[topic_variable] = topic_path
-
-                if line.startswith("consumers:"):
-                    in_consumer_section = True
-                    in_topic_definition_section = False
-                    continue
-
-                if in_consumer_section and line.startswith("topics:"):
-                    in_topics_section = True
-                    continue
-
-                if in_consumer_section and in_topics_section and line.startswith("-"):
-                    topic = line[1:].strip()
-                    consumed_topics.append(topic)
-
-                if in_topics_section and line and not line.startswith("-") and not line.startswith(" "):
-                    in_topics_section = False
-
-                if in_consumer_section and line and not line.startswith(" "):
-                    in_consumer_section = False
-
-                if in_topic_definition_section and line and not line.startswith(" "):
-                    in_topic_definition_section = False
-
-            if service_name:
+            # Add consumed topics to microservice
+            if service_name and consumed_topics:
                 if service_name not in self.microservice_topics_map:
                     self.microservice_topics_map[service_name] = MicroserviceTopics()
+
                 for topic in consumed_topics:
-                    actual_topic = topic
-                    if topic.startswith("${") and topic.endswith("}"):
-                        topic_var = topic[2:-1]
-                        actual_topic = topic_map.get(topic_var, "")
+                    actual_topic = self._resolve_topic_placeholder(topic, topic_map)
                     if actual_topic:
-                        microservice_name = self.extract_microservice_name_from_topic(actual_topic)
-                        if microservice_name:
-                            self.microservice_topics_map[service_name].subscribes.add(microservice_name)
+                        self.microservice_topics_map[service_name].subscribes.add(actual_topic)
+                        print(f"Consumer '{service_name}' subscribes to topic: '{actual_topic}'")
+
         except Exception as e:
             print(f"Error processing config file {filepath}: {e}")
 
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                content = f.read()
-            if not service_name:
-                match = re.search(r"name:\s*([\w-]+)", content)
-                if match:
-                    service_name = match.group(1).replace("-service", "")
-            if not service_name:
-                filename = os.path.basename(filepath)
-                service_name = filename[:filename.rfind(".")].replace("-service", "").replace("-", "")
-            if service_name:
-                if service_name not in self.microservice_topics_map:
-                    self.microservice_topics_map[service_name] = MicroserviceTopics()
-                for topic_match in re.finditer(r"\$\{topics\.(\w+)\.event\}", content):
-                    subscribed_service = topic_match.group(1)
-                    self.microservice_topics_map[service_name].subscribes.add(subscribed_service)
-        except Exception as e:
-            print(f"Error with regex parsing for {filepath}: {e}")
+    def _build_topic_map(self, lines, topic_map):
+        """Extract topic definitions from the topics section"""
+        in_topic_definition_section = False
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            
+            if line.startswith("spring:"):
+                in_topic_definition_section = False
+            elif line == "topics:":
+                in_topic_definition_section = True
+            elif in_topic_definition_section and "event:" in line:
+                topic_path = line.split(":", 1)[1].strip()
+                topic_key = line.split(":", 1)[0].strip()
+                
+                # Find parent context
+                parent_context = self._find_parent_context(lines, i)
+                topic_variable = f"topics.{parent_context + '.' if parent_context else ''}{topic_key}"
+                topic_map[topic_variable] = topic_path
+            elif in_topic_definition_section and line and not line.startswith(" "):
+                in_topic_definition_section = False
+
+    def _find_parent_context(self, lines, current_index):
+        """Find parent context for topic definition"""
+        current_indent = len(lines[current_index]) - len(lines[current_index].lstrip())
+        
+        for j in range(current_index - 1, max(0, current_index - 5), -1):
+            prev_line = lines[j].strip()
+            prev_indent = len(lines[j]) - len(lines[j].lstrip())
+            
+            if prev_line.endswith(":") and prev_indent < current_indent:
+                return prev_line.rstrip(":")
+        return ""
+
+    def _extract_consumed_topics(self, lines, consumed_topics):
+        """Extract topics from consumers section"""
+        in_consumer_section = False
+        in_topics_section = False
+        
+        for line in lines:
+            line = line.strip()
+            
+            if line.startswith("consumers:"):
+                in_consumer_section = True
+            elif in_consumer_section and line.startswith("topics:"):
+                in_topics_section = True
+            elif in_consumer_section and in_topics_section and line.startswith("-"):
+                topic = line[1:].strip()
+                consumed_topics.append(topic)
+            elif in_topics_section and line and not line.startswith("-") and not line.startswith(" "):
+                in_topics_section = False
+            elif in_consumer_section and line and not line.startswith(" ") and not line.startswith("consumers:"):
+                in_consumer_section = False
+
+    def _extract_placeholder_topics(self, content, topic_map, consumed_topics):
+        """Extract topics from ${topics.xxx.event} placeholders"""
+        for topic_match in re.finditer(r"(\$\{topics\.[\w.-]+(?:\.[\w.-]+)*\.event\})", content):
+            topic_placeholder = topic_match.group(1)
+            topic_key = topic_placeholder[2:-1]  # Remove ${ and }
+            actual_topic = topic_map.get(topic_key, topic_key)
+            
+            if actual_topic and actual_topic not in consumed_topics:
+                consumed_topics.append(actual_topic)
+
+    def _resolve_topic_placeholder(self, topic, topic_map):
+        """Resolve topic placeholder to actual topic"""
+        if topic.startswith("${") and topic.endswith("}"):
+            topic_var = topic[2:-1]
+            return topic_map.get(topic_var, "")
+        return topic
 
     def process_producer_docs(self):
         if not os.path.isdir(self.doc_directory):
             raise IOError(f"Documentation directory does not exist: {self.doc_directory}")
         
-        # collect all known microservice names from config processing
         known_microservices = set(self.microservice_topics_map.keys())
         
-        # recursively searching the subdirectories
-        for root, dirs, files in os.walk(self.doc_directory):
+        for root, _, files in os.walk(self.doc_directory):
             for filename in files:
-                if filename.endswith(".yaml") or filename.endswith(".yml"):
+                if filename.endswith((".yaml", ".yml")):
                     filepath = os.path.join(root, filename)
-                    
                     matched_service = self._find_matching_microservice(filepath, known_microservices)
                     if matched_service:
                         self.process_producer_doc(filepath, matched_service)
 
     def _find_matching_microservice(self, doc_filepath, known_microservices):
-        """ we try hard to match a doc file with a known microservice name with some "strategies" ( ;-;)"""
+        """Find matching microservice using multiple strategies"""
         filename = os.path.basename(doc_filepath)
         base_filename = filename[:filename.rfind(".")].replace("-service", "").replace("-", "").lower()
         
-        # strategy 1: direct match
+        # Strategy 1: Direct match
         for ms_name in known_microservices:
-            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+            normalized_ms = ms_name.lower().replace("-", "").replace("_", "")
             normalized_filename = base_filename.replace("_", "")
             
-            if normalized_ms_name == normalized_filename:
+            if normalized_ms == normalized_filename:
                 return ms_name
 
-        # strategy 2: partial match -> if file_name.contains() microservice name
+        # Strategy 2: Partial match
         for ms_name in known_microservices:
-            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
+            normalized_ms = ms_name.lower().replace("-", "").replace("_", "")
             normalized_filename = base_filename.replace("_", "")
             
-            if normalized_ms_name in normalized_filename or normalized_filename in normalized_ms_name:
+            if normalized_ms in normalized_filename or normalized_filename in normalized_ms:
                 return ms_name
         
-        # strategy 3: check each word slicing the filename
+        # Strategy 3: Word matching
         filename_words = base_filename.replace("-", " ").replace("_", " ").split()
         for ms_name in known_microservices:
             ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
-            # if any significant word matches (length > 2  because it can be short prefixes like "ms", "api")
             for ms_word in ms_words:
                 if len(ms_word) > 2 and ms_word in filename_words:
                     return ms_name
         
-        # strategy 4: try to find from yaml title >:(
+        # Strategy 4: Title-based matching
+        return self._match_by_title(doc_filepath, known_microservices)
+
+    def _match_by_title(self, doc_filepath, known_microservices):
+        """Match microservice by document title"""
         try:
             with open(doc_filepath, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            
             title_match = re.search(r'title:\s*([^\n]+)', content, re.IGNORECASE)
-            if title_match:
-                title = title_match.group(1).strip().strip('"').strip("'")
+            if not title_match:
+                return None
                 
-                normalized_title = title.lower().replace(" service", "").replace(" api", "").replace("-", "").replace("_", "").replace(" ", "")
-                
-                # direct match with title (hopefully)
-                for ms_name in known_microservices:
-                    normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
-                    if normalized_ms_name == normalized_title:
+            title = title_match.group(1).strip().strip('"').strip("'")
+            normalized_title = title.lower().replace(" service", "").replace(" api", "").replace("-", "").replace("_", "").replace(" ", "")
+            
+            # Direct title match
+            for ms_name in known_microservices:
+                normalized_ms = ms_name.lower().replace("-", "").replace("_", "")
+                if normalized_ms == normalized_title or normalized_ms in normalized_title or normalized_title in normalized_ms:
+                    return ms_name
+            
+            # Word-based title matching
+            title_words = title.lower().replace("-", " ").replace("_", " ").split()
+            for ms_name in known_microservices:
+                ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
+                for ms_word in ms_words:
+                    if len(ms_word) > 2 and ms_word in title_words:
                         return ms_name
-                
-                # partial match with title
-                for ms_name in known_microservices:
-                    normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
-                    if normalized_ms_name in normalized_title or normalized_title in normalized_ms_name:
-                        return ms_name
-                
-                # words matching with title
-                title_words = title.lower().replace("-", " ").replace("_", " ").split()
-                for ms_name in known_microservices:
-                    ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
-                    for ms_word in ms_words:
-                        if len(ms_word) > 2 and ms_word in title_words:
-                            return ms_name
                         
         except Exception as e:
             print(f"Error reading title from {doc_filepath}: {e}")
@@ -216,48 +218,26 @@ class YamlParser:
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-            
-            # Collect all known microservice names for matching
-            known_microservices = set(self.microservice_topics_map.keys())
-            
-            # Find all topic patterns with their positions
+
             for match in self.DOC_TOPIC_PATTERN.finditer(content):
                 topic = match.group(1)
                 topic_position = match.start()
                 
-              
                 if self._is_in_domain_event_section(content, topic_position):
-                    extracted_microservice_name = self.extract_microservice_name_from_topic(topic)
-                    if extracted_microservice_name:
-                        # try to match the extracted name to a known microservice
-                        matched_microservice = self._match_extracted_name_to_microservice(
-                            extracted_microservice_name, 
-                            known_microservices, 
-                            filepath
-                        )
-                        
-                        if matched_microservice:
-                            self.microservice_topics_map[service_name].produces.add(matched_microservice)
-                            print(f"Matched topic '{topic}' -> extracted '{extracted_microservice_name}' -> microservice '{matched_microservice}'")
-                        else:
-                            # !!!! fallback !!!!! : use the original extracted name if no match found
-                            self.microservice_topics_map[service_name].produces.add(extracted_microservice_name)
-                            print(f"No match found for extracted microservice '{extracted_microservice_name}' from topic '{topic}', using original name")
+                    self.microservice_topics_map[service_name].produces.add(topic)
+                    print(f"Producer '{service_name}' produces topic: '{topic}'")
+                    
         except Exception as e:
             print(f"Error processing doc file {filepath}: {e}")
     
     def _is_in_domain_event_section(self, content, topic_position):
-        """check if the topic at the given position is in a domain event section"""
-        # pattern search ediyoruz normalde, ama **topic** yakaladıktan sonra hemen geriye bakacağız doğru tag de miyiz 
+        """Check if topic is in a domain event section"""
         lines_before_topic = content[:topic_position].split('\n')
         
-        # search backwards for the nearest path definition and its tags
         for i in range(len(lines_before_topic) - 1, -1, -1):
             line = lines_before_topic[i].strip()
             
-            # looking for a clean path :
             if re.match(r'^\s*/[^:]*:\s*$', lines_before_topic[i]):
-        
                 lines_after_path = content[topic_position:].split('\n')
                 combined_lines = lines_before_topic[i:] + lines_after_path
                 
@@ -272,33 +252,49 @@ class YamlParser:
                         continue
                     
                     if in_tags_section:
-                        
-                        if line_text and not line_text.startswith(' ') and not line_text.startswith('\t'):
+                        if line_text and not line_text.startswith((' ', '\t')):
                             break
                         tags_content.append(line_stripped)
                 
-                #  find any tag contains "domain event" not case sensitive
                 tags_text = ' '.join(tags_content).lower()
                 return 'domainevent' in tags_text.replace(' ', '') or 'domain event' in tags_text
         
         return False
 
-    #X.microserviceadi.event olarak dusunup mikroservis isimlerini buradan cekiyoruz.
     def extract_microservice_name_from_topic(self, topic):
+        """Extract microservice name from topic pattern"""
         match = self.TOPIC_PATTERN.match(topic)
-        if match:
-            return match.group(2)
-        return None
+        return match.group(2) if match else None
 
     def build_dependency_graph(self):
+        """Build dependency graph by matching microservice name parts"""
+        print("\n--- Building Dependency Graph ---")
+
+        # Build reverse index: microservice name part -> producers
+        ms_name_part_to_producers = {}
+        for producer_service, topics_obj in self.microservice_topics_map.items():
+            for topic in topics_obj.produces:
+                ms_name_part = self.extract_microservice_name_from_topic(topic)
+                if ms_name_part:
+                    if ms_name_part not in ms_name_part_to_producers:
+                        ms_name_part_to_producers[ms_name_part] = set()
+                    ms_name_part_to_producers[ms_name_part].add(producer_service)
+
+        # Build dependencies
         dependencies = {service: set() for service in self.microservice_topics_map}
-        for consumer, topics in self.microservice_topics_map.items():
-            for subscribed in topics.subscribes:
-                for producer, prod_topics in self.microservice_topics_map.items():
-                    if producer == consumer:
-                        continue
-                    if subscribed in prod_topics.produces:
-                        dependencies[consumer].add(producer)
+        
+        for consumer_service, topics_obj in self.microservice_topics_map.items():
+            for subscribed_topic in topics_obj.subscribes:
+                subscribed_ms_name_part = self.extract_microservice_name_from_topic(subscribed_topic)
+                
+                if subscribed_ms_name_part and subscribed_ms_name_part in ms_name_part_to_producers:
+                    producers = ms_name_part_to_producers[subscribed_ms_name_part]
+                    filtered_producers = {p for p in producers if p != consumer_service}
+                    
+                    if filtered_producers:
+                        dependencies[consumer_service].update(filtered_producers)
+                        print(f"'{consumer_service}' depends on {filtered_producers}")
+            
         return dependencies
 
     def get_all_microservice_names(self):
@@ -311,134 +307,23 @@ class YamlParser:
         dependencies = self.build_dependency_graph()
         return sum(len(dep_set) for dep_set in dependencies.values())
 
-    ''' test '''
-    def _match_extracted_name_to_microservice(self, extracted_name, known_microservices, doc_filepath=None):
-        """If the topics in the /config directory were named properly, you wouldn't be reading this :)"""
-
-        if not extracted_name:
-            return None
-            
-        normalized_extracted = extracted_name.lower().replace("-", "").replace("_", "")
-
-
-        #strategy 0:
-        
-        # strategy 1: direct match
-        for ms_name in known_microservices:
-            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
-            if normalized_ms_name == normalized_extracted:
-                return ms_name
-        
-        # strategy 2: partial match --> "contains() in java"
-        for ms_name in known_microservices:
-            normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
-            if normalized_ms_name in normalized_extracted or normalized_extracted in normalized_ms_name:
-                return ms_name
-
-        # strategy 3: remove numbers and try again (audit123 -> audit)
-        extracted_no_numbers = re.sub(r'\d+', '', normalized_extracted)
-        if extracted_no_numbers and len(extracted_no_numbers) > 2:
-            for ms_name in known_microservices:
-                normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
-                ms_no_numbers = re.sub(r'\d+', '', normalized_ms_name)
-                
-                if extracted_no_numbers == ms_no_numbers:
-                    return ms_name
-                if extracted_no_numbers in ms_no_numbers or ms_no_numbers in extracted_no_numbers:
-                    return ms_name
-        
-        # dtrategy 4: use filepath information if available
-        if doc_filepath:
-            filename = os.path.basename(doc_filepath)
-            base_filename = filename[:filename.rfind(".")].replace("-service", "").replace("-", "").lower()
-            normalized_filename = base_filename.replace("_", "")
-            
-            # try to match extracted name with filename context
-            for ms_name in known_microservices:
-                normalized_ms_name = ms_name.lower().replace("-", "").replace("_", "")
-                
-                # if both extracted name and filename contain parts of the microservice name
-                if (normalized_extracted in normalized_ms_name or normalized_ms_name in normalized_extracted) and \
-                   (normalized_filename in normalized_ms_name or normalized_ms_name in normalized_filename):
-                    return ms_name
-                
-               
-                if normalized_ms_name == normalized_filename:
-                    
-                    common_chars = set(normalized_extracted) & set(normalized_ms_name)
-                    if len(common_chars) >= min(3, len(normalized_extracted) // 2):
-                        return ms_name
-
-            # now we try filename-based word matching combined with extracted name
-            filename_words = base_filename.replace("-", " ").replace("_", " ").split()
-            extracted_words = extracted_name.lower().replace("-", " ").replace("_", " ").split()
-            
-            for ms_name in known_microservices:
-                ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
-                
-                filename_matches = 0
-                extracted_matches = 0
-                
-                for ms_word in ms_words:
-                    if len(ms_word) > 2:
-                     
-                        for filename_word in filename_words:
-                            if len(filename_word) > 2 and (ms_word in filename_word or filename_word in ms_word):
-                                filename_matches += 1
-                        
-                  
-                        for extracted_word in extracted_words:
-                            if len(extracted_word) > 2 and (ms_word in extracted_word or extracted_word in ms_word):
-                                extracted_matches += 1
-                
-                # if we have matches from both filename and extracted name, it can be a good match
-                if filename_matches > 0 and extracted_matches > 0:
-                    return ms_name
-
-        # strategy 5: word based matching 
-        extracted_words = extracted_name.lower().replace("-", " ").replace("_", " ").split()
-        for ms_name in known_microservices:
-            ms_words = ms_name.lower().replace("-", " ").replace("_", " ").split()
-            
-            # check if any significant word matches
-            for ms_word in ms_words:
-                if len(ms_word) > 3:
-                    for extracted_word in extracted_words:
-                        if len(extracted_word) > 3 and (ms_word in extracted_word or extracted_word in ms_word):
-                            return ms_name
-
-# test
+# Test
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
     base_dir = os.path.join(os.path.dirname(current_dir), "test")
     parser = YamlParser(base_dir)
     parser.process_all_microservices()
-    print("Lamine Yaml xD")
+    
+    print("\nMicroservice Topics:")
     for name in parser.get_all_microservice_names():
         topics = parser.get_microservice_topic_map()[name]
         print(f"{name}:")
-        print(f"  Produces topics for: {topics.produces}")
-        print(f"  Subscribes to topics from: {topics.subscribes}")
+        print(f"  Produced: {topics.produces}")
+        print(f"  Subscribed: {topics.subscribes}")
+    
     dependencies = parser.build_dependency_graph()
-    print("\n Microservice Dependencies:")
+    print("\nMicroservice Dependencies:")
     for service, deps in dependencies.items():
         print(f"{service} depends on: {deps}")
     
-    # Test için dependency count da yazdıralım
     print(f"\nTotal dependency count: {parser.get_total_dependency_count()}")
-
-    print("\nAll microservice names:")
-    print(parser.get_all_microservice_names())
-
-    #print(dependencies)
-
-    # dependency ile ilgili aciklama
-    # The dependency graph is built by matching the microservices a service subscribes to
-    # (topics.subscribes) with the microservices that produce those topics (topics.produces).
-    # If a service subscribes to "example" but no microservice is found that produces "example",
-    # then no dependency is recorded. This can happen if:
-    # - No documentation file for "example" microservice exists in the doc directory,
-    # - Or the documentation does not declare any produced topics for "example",
-    # - Or the topic extraction logic does not match the topic name as expected.
-    # As a result, the user appears to subscribe to "example", but is not dependent on it
-    # in the dependency graph, because "example" is not found as a producer.

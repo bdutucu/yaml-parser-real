@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
@@ -8,11 +6,16 @@ services:
       - "5000:5000"
     volumes:
       - ./backend:/app
+      # Mount the project directory for analysis - change HOST_PROJECT_PATH to your desired directory
+      # Bu dizinde 
+      - ${HOST_PROJECT_PATH:-C:\Users\hakim\Desktop}:/app/projects
       # Remove this line that's causing the error:
       # - ./yaml_parser.py:/app/yaml_parser.py
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=0
+      # Container path where projects will be mounted
+      - CONTAINER_PROJECT_PATH=/app/projects
     networks:
       - yaml-parser-network
     restart: unless-stopped
@@ -21,7 +24,7 @@ services:
     build: ./frontend
     container_name: yaml-parser-frontend
     ports:
-      - "80:80"
+      - "3000:3000"
     depends_on:
       - backend
     networks:

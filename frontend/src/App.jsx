@@ -4,7 +4,7 @@ import MicroserviceList from "./components/MicroserviceList";
 import "./App.css";
 
 function App() {
-  const [directoryPath, setDirectoryPath] = useState("C:\\Users\\hakim\\Desktop\\yaml-parser-real\\test");
+  const [directoryPath, setDirectoryPath] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -82,19 +82,19 @@ function App() {
 
       <div className="container">
         <div className="input-section">
-          <h3 style={{ color: "white" }}>Enter project folder directory:</h3>
+          <h3 style={{ color: "white" }}>Enter project directory path (inside container):</h3>
           <input
             type="text"
             value={directoryPath}
             onChange={(e) => setDirectoryPath(e.target.value)}
-            placeholder="Enter full path to your project directory. Example: (C:\Users\username\my-project)"
-            defaultValue={"C:\\Users\\hakim\\Desktop\\yaml-parser-real\\test"}
+            placeholder="Enter the project folder name. must be under the mounting point."
+            defaultValue={""}
             //this value should be written by default.
             className="directory-input"
           />
           <p className="help-text">
             Application will scan the project directory and look for config/
-            and deployment/ subdirectories.
+            and deployment/ subdirectories. Use /app/projects for the mounted directory.
           </p>
         </div>
 

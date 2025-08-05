@@ -6,16 +6,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    host: '0.0.0.0', // Allow external connections
     open: true, // Automatically open browser
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5000', // For local development
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   },
   build: {
-    outDir: 'build'
+    outDir: 'dist' // Vite uses 'dist' by default, not 'build'
   }
 })

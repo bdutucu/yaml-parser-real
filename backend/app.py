@@ -14,6 +14,7 @@ class YAMLParser:
         }
     
     def scan_directory(self, directory_path):
+        directory_path = "/app/projects/" + directory_path
         if not os.path.exists(directory_path):
             return {"error": f"Directory not found: {directory_path}"}
         

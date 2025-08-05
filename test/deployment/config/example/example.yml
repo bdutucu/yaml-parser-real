@@ -6,14 +6,14 @@ spring:
 
 topics:
   payment:
-    event: ecommerce.payment.event
+    event: ecommerce.ahmet-pusat.event
   order:
-    event: ecommerce.order.event
+    event: ecommerce.dutucu.event
 
 consumers:
   mainConsumer:
     topics:
-      - ${topics.example.event}
+      - ${topics.ahmet-pusat.event}
   secondConsumer:
     topics:
-      - ${topics.example.event}
+      - ${topics.dutucu.event}

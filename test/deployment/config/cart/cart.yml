@@ -18,5 +18,5 @@ consumers:
   cartConsumer:
     topics:
       - ${topics.user.event} # Cart service consumes user events for cart management
-      - ${topics.catalog.event} # Cart service consumes catalog events for product updates
+      - ${topics.bugra.event} # Cart service consumes catalog events for product updates
       - ${topics.inventory.event} # Cart service consumes inventory events for availability checks

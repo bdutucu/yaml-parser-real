@@ -17,7 +17,7 @@ paths:
             description: Events published by the Catalog Service
       summary: Product catalog updated event
       description: |+
-        **topic:** `ecommerce.catalog.event`
+        **topic:** `ecommerce.bugra.event`
         This event is published when a product in the catalog is updated.
       requestBody:
         required: true

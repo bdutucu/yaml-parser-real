@@ -1,19 +1,198 @@
 spring:
   application:
-    name: order-service
+    name: nightmare-service-extreme-test
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:9092,kafka2:9092,kafka3:9092
+  profiles:
+    active: production
 
+# Çok karmaşık nested topic definitions
 topics:
+  # Normal topic
   payment:
     event: ecommerce.payment.event
+    
+  # Nested parent context
   order:
-    event: ecommerce.order.event
+    create:
+      event: ecommerce.order.create.event
+    update:
+      event: ecommerce.order.update.event
+    cancel:
+      event: ecommerce.order.cancel.event
+    
+  # Deep nesting
+  inventory:
+    warehouse:
+      stock:
+        low:
+          event: ecommerce.inventory.warehouse.stock.low.event
+        high:
+          event: ecommerce.inventory.warehouse.stock.high.event
+      location:
+        change:
+          event: ecommerce.inventory.warehouse.location.change.event
+    product:
+      added:
+        event: ecommerce.inventory.product.added.event
+      removed:
+        event: ecommerce.inventory.product.removed.event
+        
+  # Edge case: no .event suffix
+  notification:
+    sms: ecommerce.notification.sms
+    email: ecommerce.notification.email.send
+    
+  # Edge case: multiple dots and weird naming
+  analytics:
+    user:
+      behavior:
+        click.tracking.event: ecommerce.analytics.user.behavior.click.tracking.event
+        page.view.event: ecommerce.analytics.user.behavior.page.view.event
+        
+  # Edge case: empty or weird values
+  weird:
+    empty:
+      event: ""
+    null_like:
+      event: null
+    special_chars:
+      event: ecommerce.special@chars#test$.event
+      
+  # Edge case: topic with numbers and special characters
+  audit123:
+    log_v2:
+      event: ecommerce.audit123.log_v2.event
+      
+  # Edge case: very long topic name
+  super_long_topic_name_that_might_break_something:
+    very_nested:
+      deeply:
+        buried:
+          event: ecommerce.super_long_topic_name_that_might_break_something.very_nested.deeply.buried.event
 
+# Multiple consumer groups with various configurations
 consumers:
+  # Normal consumer
   mainConsumer:
     topics:
       - ${topics.payment.event}
-  secondConsumer:
+      - ${topics.order.create.event}
+      
+  # Consumer with deep nested topics
+  inventoryConsumer:
     topics:
-      - ${topics.order.event}
+      - ${topics.inventory.warehouse.stock.low.event}
+      - ${topics.inventory.warehouse.stock.high.event}
+      - ${topics.inventory.warehouse.location.change.event}
+      - ${topics.inventory.product.added.event}
+      - ${topics.inventory.product.removed.event}
+      
+  # Consumer with analytics topics
+  analyticsConsumer:
+    topics:
+      - ${topics.analytics.user.behavior.click.tracking.event}
+      - ${topics.analytics.user.behavior.page.view.event}
+      
+  # Edge case: consumer with mixed topic types
+  mixedConsumer:
+    topics:
+      - ${topics.notification.sms}  # No .event suffix
+      - ${topics.notification.email}
+      - ${topics.order.update.event}
+      - ecommerce.hardcoded.topic.event  # Hardcoded topic
+      - another.hardcoded.topic
+      
+  # Edge case: consumer with invalid placeholders
+  brokenConsumer:
+    topics:
+      - ${topics.nonexistent.event}  # Bu topic definition'da yok
+      - ${topics.payment.nonexistent}  # Bu field yok
+      - ${invalid.placeholder}  # Tamamen yanlış format
+      - ${topics.weird.empty.event}  # Empty topic
+      
+  # Edge case: consumer with special characters in topic names
+  specialConsumer:
+    topics:
+      - ${topics.special_chars.event}
+      - ${topics.audit123.log_v2.event}
+      - ${topics.super_long_topic_name_that_might_break_something.very_nested.deeply.buried.event}
+      
+  # Edge case: empty consumer
+  emptyConsumer:
+    topics: []
+    
+  # Edge case: consumer with malformed topics section
+  malformedConsumer:
+    topics:
+      - ${topics.payment.event}
+      # Intentionally malformed entries
+      - ${topics.order.create.event
+      - topics.payment.event}  # Missing ${...}
+      - ${topics..event}  # Double dots
+      - ${}  # Empty placeholder
+      
+  # Edge case: consumer with duplicate topics
+  duplicateConsumer:
+    topics:
+      - ${topics.payment.event}
+      - ${topics.payment.event}  # Duplicate
+      - ecommerce.payment.event  # Same topic, different format
+      - ${topics.order.create.event}
+      - ${topics.order.create.event}  # Another duplicate
+      
+  # Edge case: consumer with very long list
+  massiveConsumer:
+    topics:
+      - ${topics.payment.event}
+      - ${topics.order.create.event}
+      - ${topics.order.update.event}
+      - ${topics.order.cancel.event}
+      - ${topics.inventory.warehouse.stock.low.event}
+      - ${topics.inventory.warehouse.stock.high.event}
+      - ${topics.inventory.warehouse.location.change.event}
+      - ${topics.inventory.product.added.event}
+      - ${topics.inventory.product.removed.event}
+      - ${topics.analytics.user.behavior.click.tracking.event}
+      - ${topics.analytics.user.behavior.page.view.event}
+      - ${topics.audit123.log_v2.event}
+      - ecommerce.external.api.call.event
+      - ecommerce.external.webhook.received.event
+      - ecommerce.external.third.party.integration.event
+      - manually.typed.topic.without.placeholder
+      - another.manual.topic.event
+      - yet.another.hardcoded.topic
+      
+# Edge case: Additional spring configs that might interfere
+server:
+  port: 8080
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+        
+logging:
+  level:
+    com.example: DEBUG
+    org.apache.kafka: INFO
+
+# Edge case: Some random configuration that might confuse the parser
+random:
+  config:
+    topics: "this is not a real topics section"
+    consumers: "this is not a real consumers section"
+    event: "this might confuse the regex"
+    
+# Edge case: Topics section appearing again (second topics section)
+additional:
+  topics:
+    duplicate:
+      event: ecommerce.duplicate.event
+      
+# Edge case: Consumers section appearing again  
+additional_consumers:
+  anotherConsumer:
+    topics:
+      - ecommerce.additional.topic.event

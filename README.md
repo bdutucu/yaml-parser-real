@@ -4,11 +4,11 @@ A web application for parsing YAML configuration files and visualizing microserv
 
 ## Features
 
-- **Reading from directory:** :Enter the project folder directory as input to get the results.
+- **Reading from directory:** Enter the project folder directory as input to get the results.
 
 - **Logical Dependency Analysis**: Automatically detects and analyzes microservice relationships from YAML configurations
 
-- **Interactive Visualization**:  dependency graphs using Mermaid.js with:
+- **Interactive Visualization**: dependency graphs using Mermaid.js with:
   - Automatic graph generation
   - Export functionality (PNG format)
   - Responsive design
@@ -21,10 +21,9 @@ A web application for parsing YAML configuration files and visualizing microserv
 ## Architecture
 
 - **Backend**: Flask 
-- **Frontend**: React
+- **Frontend**: React with Vite
 - **Visualization**: Mermaid.js for dependency graph generation
 - **Deployment**: Docker (it is planned for later)
-)
 
 ## Quick Start
 
@@ -41,17 +40,15 @@ Before setting up the project, ensure you have the following installed:
      ```bash
      python --version
      ```
- 
 
 2. **Node.js with npm** 
-     - Node.js: `v20.16.0` or higher 
-     - npm: `10.8.1` or higher 
+     - Node.js: `v18.0.0` or higher (Vite requirement)
+     - npm: `9.0.0` or higher 
    - **Verify installation**: Open terminal/command prompt and run:
      ```bash
      node --version
      npm --version
      ```
-     
 
 3. **Git** (for cloning the repository)
    - Download from [git-scm.com](https://git-scm.com/)
@@ -67,8 +64,8 @@ Before setting up the project, ensure you have the following installed:
 ```bash
 # Run these commands and check the output matches the requirements:
 python --version    # Should show Python 3.8.0 or higher
-node --version      # Should show v16.0.0 or higher  
-npm --version       # Should show 7.0.0 or higher
+node --version      # Should show v18.0.0 or higher (Vite requirement)
+npm --version       # Should show 9.0.0 or higher
 git --version       # Should show git version 2.x.x or higher
 ```
 
@@ -134,11 +131,11 @@ cd yaml-parser-real
    
    **Expected output**: `Running on http://127.0.0.1:5000` or similar
    
-   **Verify**: Open browser to `http://localhost:5000/api/health` - you should see a health check response.
+   **Verify**: Open browser to `http://localhost:5000/health` - you should see a health check response.
    
    **Important**: Keep this terminal window open and running.
 
-#### 3. Frontend Setup (React/Node.js)
+#### 3. Frontend Setup (React/Vite)
 
 **⚠️ Open a NEW terminal window/tab for the frontend setup.**
 
@@ -160,28 +157,30 @@ cd yaml-parser-real
    
    **Verify**: A `node_modules` folder should appear in the frontend directory.
 
-3. **Start the React development server**:
+3. **Start the Vite development server**:
    
    ```bash
-   npm start
+   npm run dev
    ```
    
    **Expected output**: 
    ```
-   Compiled successfully!
-   Local:            http://localhost:3000
+   VITE v4.x.x  ready in xxx ms
+   
+   ➜  Local:   http://localhost:5173/
+   ➜  Network: use --host to expose
    ```
    
-   **Verify**: Your browser should automatically open to `http://localhost:3000` showing the YAML Parser interface.
+   **Verify**: Open your browser to `http://localhost:5173` showing the YAML Parser interface.
 
 #### 4. Final Verification
 
 **Both servers should now be running:**
 - Backend: `http://localhost:5000` 
-- Frontend: `http://localhost:3000`
+- Frontend: `http://localhost:5173` (Vite default port)
 
 **Test the complete setup:**
-1. Go to `http://localhost:3000`
+1. Go to `http://localhost:5173`
 2. You should see the YAML Microservice Relation Mapper interface
 3. If you see any errors, check the troubleshooting section below
 
@@ -217,11 +216,11 @@ If you've already set up the project and just want to run it:
    cd frontend
    ```
 
-2. **Start the React development server**:
+2. **Start the Vite development server**:
    ```bash
-   npm start
+   npm run dev
    ```
-   - Frontend will be available at `http://localhost:3000`
+   - Frontend will be available at `http://localhost:5173`
 
 ### Bonus:
 
@@ -235,9 +234,10 @@ Use yaml-parser-run.bat if you dont want to type these commands every time.
 - **Flask-CORS**: 4.0.0 - Cross-Origin Resource Sharing support
 - **Werkzeug**: 2.3.7 - WSGI utility library
 
-#### Frontend (Node.js/React)
+#### Frontend (Node.js/React/Vite)
 
 - **React**: ^18.2.0 - Frontend framework
+- **Vite**: ^4.4.0 - Fast build tool and development server
 - **Axios**: ^1.4.0 - HTTP client for API calls
 - **Mermaid**: ^10.2.4 - Diagram and chart library
 - **HTML2Canvas**: ^1.4.1 - Screenshot generation
@@ -251,15 +251,15 @@ Use yaml-parser-run.bat if you dont want to type these commands every time.
 ```bash
 # Check Python version (must be 3.8+)
 python --version
-# Expected: Python 3.8.0 or higher (e.g., Python 3.13.5)
+# Expected: Python 3.8.0 or higher (Python 3.13.5 used)
 
-# Check Node.js version (must be 16+)
+# Check Node.js version (must be 18+ for Vite)
 node --version  
-# Expected: v16.0.0 or higher (e.g., v18.17.0)
+# Expected: v18.0.0 or higher (e.g., v20.16.0)
 
-# Check npm version (must be 7+)
+# Check npm version (must be 9+)
 npm --version
-# Expected: 7.0.0 or higher (e.g., 9.6.7)
+# Expected: 9.0.0 or higher (e.g., 9.6.7)
 
 # Check if pip is working
 pip --version
@@ -279,7 +279,7 @@ python -c "import sys; print(sys.executable)"
 
 2. **"node is not recognized" or "npm not found"**
    - **Solution**: Node.js/npm not properly installed or not in PATH
-   - **Fix**: Download and reinstall Node.js LTS from nodejs.org
+   - **Fix**: Download and reinstall Node.js v18+ LTS from nodejs.org
    - **Verify fix**: Close terminal, open new one, run `node --version` and `npm --version`
 
 3. **Virtual environment activation fails on Windows**
@@ -298,20 +298,27 @@ python -c "import sys; print(sys.executable)"
    - **Backend (port 5000)**: 
      - Kill process: `taskkill /f /im python.exe` (Windows) or `pkill python` (Mac/Linux)
      - Or change port in `backend/app.py`: modify `app.run(port=5001)`
-   - **Frontend (port 3000)**: 
-     - React will automatically suggest alternative port (usually 3001)
+   - **Frontend (port 5173)**: 
+     - Vite will automatically suggest alternative port (usually 5174)
      - Type `y` when prompted to use different port
+     - Or manually specify port: `npm run dev -- --port 3000`
 
 6. **Flask server starts but shows errors**
    - **Check**: Virtual environment is activated (you should see `(venv)` in prompt)
    - **Check**: All dependencies installed: `pip list` should show Flask, Flask-CORS, Werkzeug
    - **Reinstall**: `pip install -r requirements.txt --force-reinstall`
 
-7. **React app shows blank page or errors**
+7. **Vite/React app shows blank page or errors**
    - **Check**: Backend is running on port 5000
    - **Check**: No console errors in browser developer tools (F12)
-   - **Restart**: Stop React server (Ctrl+C) and run `npm start` again
-   - **Clear cache**: Delete `node_modules` and run `npm install` again
+   - **Restart**: Stop Vite server (Ctrl+C) and run `npm run dev` again
+   - **Clear cache**: Delete `node_modules` and `dist` folder, run `npm install` again
+   - **Check Vite config**: Ensure `vite.config.js` has correct proxy settings for backend
+
+8. **Vite-specific issues**
+   - **Hot reload not working**: Check if your files are being watched correctly
+   - **Import errors**: Ensure all imports use correct file extensions (.jsx for React components)
+   - **Build errors**: Run `npm run build` to check for production build issues
 
 #### Emergency Reset Commands
 
@@ -334,6 +341,8 @@ pip install -r requirements.txt
 cd frontend
 rmdir /s node_modules    # Windows
 rm -rf node_modules      # Mac/Linux
+rmdir /s dist           # Windows (Vite build output)
+rm -rf dist             # Mac/Linux (Vite build output)
 npm install
 ```
 
@@ -341,23 +350,21 @@ npm install
 
 1. **Start both servers** (backend and frontend) as described in the setup sections above
 
-2. **Navigate to the web application** at `http://localhost:3000`
+2. **Navigate to the web application** at `http://localhost:5173`
 
 3. **Prepare your project folder**:
    - Ensure your folder contains both "doc" and "deployment" folders
 
-5. **View results**:
+4. **View results**:
    - Explore the dependency graph
    - View detailed microservice information
    - Export diagrams as needed
 
 ## API Endpoints
 
-- `GET /api/health` - Health check endpoint
-- `POST /api/parse-directory` - Parse YAML files from uploaded ZIP directory
-- `POST /api/generate-mermaid` - Generate Mermaid.js diagram code
-
-
+- `GET /health` - Health check endpoint
+- `POST /parse` - Parse YAML files from directory path
+- `POST /generate-mermaid` - Generate Mermaid.js diagram code
 
 ## YAML File Format
 
@@ -366,21 +373,35 @@ The application expects YAML files with specific patterns for microservice confi
 ### Configuration Files (deployment/config/)
 
 ```yaml
-name: user-service
 spring:
-  # ... other configuration
-consumers:
-  topics:
-    - ${topics.order.event}
-    - ${topics.payment.event}
+  application:
+    name: user-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
 topics:
   user:
-    event: com.example.user.UserCreated
+    event: ecommerce.user.event
+  payment:
+    event: ecommerce.payment.event
+
+consumers:
+  mainConsumer:
+    topics:
+      - ${topics.user.event}
+      - ${topics.payment.event}
 ```
 
 ### Documentation Files (doc/)
 
 ```yaml
-# Service documentation
-**topic:** 'com.example.user.UserCreated'
+# Service documentation with topic definitions
+paths:
+  /user-events:
+    post:
+      tags:
+        - DomainEvent
+      description: User domain events
+      
+**Topic:** `ecommerce.user.event`
 ```

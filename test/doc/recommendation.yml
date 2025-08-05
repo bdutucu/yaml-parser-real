@@ -17,7 +17,7 @@ paths:
             description: Events published by the Recommendation Service
       summary: Product recommendation generated event
       description: |+
-        **topic:** `ecommerce.recommendation.event`
+        **topic:** `ecommerce.rec-config.event`
         This event is published when product recommendations are generated for a user.
       requestBody:
         required: true

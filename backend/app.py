@@ -42,25 +42,46 @@ class YAMLParser:
                         "version": "",
                         "category": "microservice"
                     })
-            topic_producers, topic_consumers = {}, {}
+            # Topic-based communication bağımlılıkları oluştur
+            # Topic eşleştirmesi için microservice name parçalarını kullan
+            topic_name_to_producers = {}
+            topic_name_to_consumers = {}
+            
+            # Producer topic'lerini microservice name parçalarına göre grupla
             for service, topics in ms_topic_map.items():
                 for topic in topics.produces:
-                    topic_producers.setdefault(topic, []).append(service)
+                    topic_name_part = microservice_parser.extract_microservice_name_from_topic(topic)
+                    if topic_name_part:
+                        topic_name_to_producers.setdefault(topic_name_part, []).append({
+                            'service': service,
+                            'topic': topic
+                        })
+            
+            # Consumer topic'lerini microservice name parçalarına göre grupla  
+            for service, topics in ms_topic_map.items():
                 for topic in topics.subscribes:
-                    topic_consumers.setdefault(topic, []).append(service)
-            for topic in set(topic_producers.keys()) | set(topic_consumers.keys()):
-                producers = topic_producers.get(topic, [])
-                consumers = topic_consumers.get(topic, [])
-                for producer in producers:
-                    for consumer in consumers:
-                        if producer != consumer:
+                    topic_name_part = microservice_parser.extract_microservice_name_from_topic(topic)
+                    if topic_name_part:
+                        topic_name_to_consumers.setdefault(topic_name_part, []).append({
+                            'service': service,
+                            'topic': topic
+                        })
+            
+            # aynı topic name parçasına sahip producer ve consumer'ları eşleştiriyoruz.
+            for topic_name_part in set(topic_name_to_producers.keys()) & set(topic_name_to_consumers.keys()):
+                producers = topic_name_to_producers.get(topic_name_part, [])
+                consumers = topic_name_to_consumers.get(topic_name_part, [])
+                
+                for producer_info in producers:
+                    for consumer_info in consumers:
+                        if producer_info['service'] != consumer_info['service']:
                             all_dependencies.append({
-                                "name": consumer,
-                                "type": "microservice_communication",
-                                "description": f"Microservice {producer} communicates with {consumer} via topic {topic}",
-                                "source_service": producer,
-                                "target_service": consumer,
-                                "topic": topic,
+                                "name": consumer_info['service'],
+                                "type": "microservice_communication",  
+                                "description": f"Microservice {producer_info['service']} communicates with {consumer_info['service']} via topic {topic_name_part}",
+                                "source_service": producer_info['service'],
+                                "target_service": consumer_info['service'], 
+                                "topic": topic_name_part,
                                 "version": "",
                                 "category": "microservice_flow"
                             })

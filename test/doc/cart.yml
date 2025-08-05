@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Cart Service API
+  title: Car Service API
   version: 1.0.0
   description: API documentation for the Cart Service, including domain events.
 
@@ -17,7 +17,7 @@ paths:
             description: Events published by the Cart Service
       summary: Item added to cart event
       description: |+
-        **topic:** `ecommerce.cart.event`
+        **topic:** `ecommerce.bugrahan.event`
         This event is published when an item is added to a customer's cart.
       requestBody:
         required: true

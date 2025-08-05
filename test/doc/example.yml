@@ -560,7 +560,7 @@ paths:
       - Domain Event
       summary: ""
       description: |+
-        **Topic:** `example.example-config.event`<br><br>**Title:** `/example-config/entity-value-4-updated`
+        **Topic:** `example.reco-config.event`<br><br>**Title:** `/example-config/entity-value-4-updated`
 
       responses:
       default:

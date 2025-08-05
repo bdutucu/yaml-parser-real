@@ -20,3 +20,4 @@ consumers:
       - ${topics.analytics.event} # Report service consumes analytics events for business reports
       - ${topics.audit.event} # Report service consumes audit events for compliance reports
       - ${topics.order.event} # Report service consumes order events for sales reports
+      - ${topics.bugrahan.event} # Report service consumes order events for sales reports

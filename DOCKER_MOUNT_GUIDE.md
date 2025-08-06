@@ -66,7 +66,7 @@ volumes:
 
 ## Examples
 
-If you mounted `C:\Users\hakim\Desktop\microservices-project`, then:
+If you mounted `C:\Users\user\Desktop\microservices-project`, then:
 - To analyze the entire mounted directory: `/app/projects`
 - To analyze a subdirectory: `/app/projects/service1`
 - To analyze a specific config folder: `/app/projects/service1/config`

@@ -8,7 +8,8 @@ services:
       # IMPORTANT: Change this path to your project directory
       # Windows example: C:\Users\username\Desktop\my-projects:/app/projects
       # Linux/Mac example: /home/username/projects:/app/projects
-      - C:\Users\hakim\Desktop:/app/projects
+      #change user
+      - C:\Users\user\Desktop:/app/projects
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=0

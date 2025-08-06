@@ -7,7 +7,8 @@ services:
     volumes:
       # Mount the project directory for analysis - change HOST_PROJECT_PATH to your desired directory
       # Use .env file or set environment variable HOST_PROJECT_PATH
-      - ${HOST_PROJECT_PATH:-C:\Users\hakim\Desktop}:/app/projects
+      # change user
+      - ${HOST_PROJECT_PATH:-C:\Users\user\Desktop}:/app/projects
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=0

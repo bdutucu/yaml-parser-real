@@ -1,0 +1,32 @@
+services:
+  backend:
+    image: bdutucu/yaml-parser-backend:latest
+    container_name: yaml-parser-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      # IMPORTANT: Change this path to your project directory
+      # Windows example: C:\Users\username\Desktop\my-projects:/app/projects
+      # Linux/Mac example: /home/username/projects:/app/projects
+      - C:\Users\hakim\Desktop:/app/projects
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+    networks:
+      - yaml-parser-network
+    restart: unless-stopped
+
+  frontend:
+    image: bdutucu/yaml-parser-frontend:latest
+    container_name: yaml-parser-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - yaml-parser-network
+    restart: unless-stopped
+
+networks:
+  yaml-parser-network:
+    driver: bridge

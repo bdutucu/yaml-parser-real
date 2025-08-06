@@ -13,4 +13,4 @@ topics:
 consumers:
   inventoryConsumer:
     topics:
-      - ${topics.order.event} # Inventory service consumes order events to update stock
+      - ${topics.random.event} # Inventory service consumes order events to update stock

@@ -7,8 +7,8 @@ services:
     volumes:
       - ./backend:/app
       # Mount the project directory for analysis - change HOST_PROJECT_PATH to your desired directory
-      # Bu dizinde 
-      - ${HOST_PROJECT_PATH:-C:\Users\hakim\Desktop}:/app/projects
+      # Bu dizinde ... 
+      - C:\Users\hakim\Desktop\yaml-parser-real\test:/app/projects
       # Remove this line that's causing the error:
       # - ./yaml_parser.py:/app/yaml_parser.py
     environment:

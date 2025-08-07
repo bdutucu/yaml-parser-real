@@ -14,9 +14,14 @@ class YAMLParser:
         }
     
     def scan_directory(self, directory_path):
-        directory_path = "/app/projects/" + directory_path
+        #delete the comment for docker build.
+        #directory_path = "/app/projects/" + directory_path
+
+        #this line for local testing only
+        directory_path = os.path.abspath(directory_path)
+
         if not os.path.exists(directory_path):
-            return {"error": f"Directory not found: {directory_path}"}
+            raise FileNotFoundError(f"Directory not found: {directory_path}")
         
         all_dependencies = []
         microservices_data = []
@@ -125,6 +130,9 @@ def generate_mermaid():
     try:
         data = request.get_json()
         dependencies = data.get('dependencies', [])
+        #------for debug----------
+        print("---------Dependencies---------")
+        print(dependencies)
         microservices = data.get('microservices', [])
         mermaid_code = generate_mermaid_graph(dependencies, microservices)
         return jsonify({

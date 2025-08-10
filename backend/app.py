@@ -18,7 +18,7 @@ class YAMLParser:
         #directory_path = "/app/projects/" + directory_path
 
         #this line for local testing only
-        directory_path = os.path.abspath(directory_path)
+        #directory_path = os.path.abspath(directory_path)
 
         if not os.path.exists(directory_path):
             raise FileNotFoundError(f"Directory not found: {directory_path}")
@@ -26,18 +26,24 @@ class YAMLParser:
         all_dependencies = []
         microservices_data = []
         total_dependency_count = 0
+        total_publish_subscribe_events = 0
         
         try:
             microservice_parser = YamlParser(directory_path)
             microservice_parser.process_all_microservices()
             ms_dependencies = microservice_parser.build_dependency_graph()
             ms_topic_map = microservice_parser.get_microservice_topic_map()
+            
+            # Calculate total publish/subscribe events (all produced and subscribed topics)
             for service_name, topics in ms_topic_map.items():
                 microservices_data.append({
                     "name": service_name,
                     "produces": list(topics.produces),
                     "subscribes": list(topics.subscribes)
                 })
+                # Count all produced and subscribed topics for this service
+                total_publish_subscribe_events += len(topics.produces) + len(topics.subscribes)
+                
             for service, deps in ms_dependencies.items():
                 for dep in deps:
                     all_dependencies.append({
@@ -48,59 +54,20 @@ class YAMLParser:
                         "version": "",
                         "category": "microservice"
                     })
-            # Topic-based communication bağımlılıkları oluştur
-            # Topic eşleştirmesi için microservice name parçalarını kullan
-            topic_name_to_producers = {}
-            topic_name_to_consumers = {}
-            
-            # Producer topic'lerini microservice name parçalarına göre grupla
-            for service, topics in ms_topic_map.items():
-                for topic in topics.produces:
-                    topic_name_part = microservice_parser.extract_microservice_name_from_topic(topic)
-                    if topic_name_part:
-                        topic_name_to_producers.setdefault(topic_name_part, []).append({
-                            'service': service,
-                            'topic': topic
-                        })
-            
-            # Consumer topic'lerini microservice name parçalarına göre grupla  
-            for service, topics in ms_topic_map.items():
-                for topic in topics.subscribes:
-                    topic_name_part = microservice_parser.extract_microservice_name_from_topic(topic)
-                    if topic_name_part:
-                        topic_name_to_consumers.setdefault(topic_name_part, []).append({
-                            'service': service,
-                            'topic': topic
-                        })
-            
-            # aynı topic name parçasına sahip producer ve consumer'ları eşleştiriyoruz.
-            for topic_name_part in set(topic_name_to_producers.keys()) & set(topic_name_to_consumers.keys()):
-                producers = topic_name_to_producers.get(topic_name_part, [])
-                consumers = topic_name_to_consumers.get(topic_name_part, [])
-                
-                for producer_info in producers:
-                    for consumer_info in consumers:
-                        if producer_info['service'] != consumer_info['service']:
-                            all_dependencies.append({
-                                "name": consumer_info['service'],
-                                "type": "microservice_communication",  
-                                "description": f"Microservice {producer_info['service']} communicates with {consumer_info['service']} via topic {topic_name_part}",
-                                "source_service": producer_info['service'],
-                                "target_service": consumer_info['service'], 
-                                "topic": topic_name_part,
-                                "version": "",
-                                "category": "microservice_flow"
-                            })
+            # Topic-based communication dependencies are already handled in the parser
+            # The parser's build_dependency_graph() method creates dependencies based on topic matching
+            # So we don't need to duplicate that logic here
         except Exception as e:
             pass
 
-        print(all_dependencies)
-        print(len(all_dependencies))
+        print(f"All dependencies from app.py: {len(all_dependencies)}")
+        print(f"Dependencies from parser.get_total_dependency_count(): {microservice_parser.get_total_dependency_count()}")
+        print(f"Total publish/subscribe events: {total_publish_subscribe_events}")
         total_dependency_count = microservice_parser.get_total_dependency_count()
 
         return {
             "dependencies": all_dependencies,
-            "total_dependencies": len(all_dependencies),
+            "total_dependencies": total_publish_subscribe_events,
             "microservices": microservices_data,
             "total_dependency_count": total_dependency_count
             

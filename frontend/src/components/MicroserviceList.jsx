@@ -15,14 +15,6 @@ const MicroserviceList = ({ microservices }) => {
     setSelectedTopic(selectedTopic === topic ? null : topic);
   };
 
-  const getServiceStats = (service) => {
-    return {
-      produces: service.produces.length,
-      subscribes: service.subscribes.length,
-      totalConnections: service.produces.length + service.subscribes.length
-    };
-  };
-
   // Normalize topic names for comparison (same logic as backend Python code)
   const normalizeTopicName = (name) => {
     if (!name) return '';
@@ -120,6 +112,16 @@ const MicroserviceList = ({ microservices }) => {
     return dependencies;
   };
 
+  const getServiceStats = (service) => {
+    const dependencies = getServiceDependencies(service);
+    return {
+      produces: service.produces.length,
+      subscribes: service.subscribes.length,
+      dependencies: dependencies.length,
+      totalConnections: service.produces.length + service.subscribes.length
+    };
+  };
+
   const sortedServices = [...microservices].sort((a, b) => {
     const aStats = getServiceStats(a);
     const bStats = getServiceStats(b);
@@ -186,6 +188,9 @@ const MicroserviceList = ({ microservices }) => {
                   </span>
                   <span className="stat-badge subscribes">
                     {stats.subscribes} subscribes
+                  </span>
+                  <span className="stat-badge dependencies">
+                    {stats.dependencies} dependencies
                   </span>
                 </div>
               </div>

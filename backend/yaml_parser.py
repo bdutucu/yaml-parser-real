@@ -120,7 +120,7 @@ class YamlParser:
                 path_stack = []
                 continue
             
-            
+            # Maintain nested key stack (lines that end with ':')
             if stripped.endswith(":"):
                 key = stripped[:-1].strip()
                 # Pop until current indent is greater than top
@@ -478,7 +478,7 @@ class YamlParser:
 # Test
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.join(os.path.dirname(current_dir), "test")
+    base_dir = os.path.join(current_dir, "tests", "test1")
     parser = YamlParser(base_dir)
     parser.process_all_microservices()
     

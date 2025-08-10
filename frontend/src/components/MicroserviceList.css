@@ -95,6 +95,11 @@
   color: #004085;
 }
 
+.stat-badge.dependencies {
+  background: #fff3cd;
+  color: #856404;
+}
+
 .service-details {
   padding: 0 1rem 1rem 1rem;
   border-top: 1px solid #e9ecef;

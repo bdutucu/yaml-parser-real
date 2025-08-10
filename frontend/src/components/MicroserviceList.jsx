@@ -23,6 +23,51 @@ const MicroserviceList = ({ microservices }) => {
     };
   };
 
+  // Normalize topic names for comparison (same logic as backend Python code)
+  const normalizeTopicName = (name) => {
+    if (!name) return '';
+    
+    // Better camelCase to hyphen conversion
+    // Handle sequences like "c2ResourceManagement" -> "c2-resource-management"
+    // First pass: insert hyphens before uppercase letters that follow lowercase/digits
+    name = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2');
+    // Second pass: handle consecutive uppercase letters like "XMLHttpRequest" -> "XML-Http-Request"
+    name = name.replace(/([A-Z])([A-Z][a-z])/g, '$1-$2');
+    // Convert to lowercase first, then remove all separators
+    name = name.toLowerCase();
+    const normalized = name.replace(/[^a-z0-9]/g, '');
+    
+    return normalized;
+  };
+
+  // Extract microservice name from topic pattern
+  const extractMicroserviceNameFromTopic = (topic) => {
+    const topicPattern = /([^.]+)\.([^.]+)\..*?(?:\.event|$)/;
+    const match = topic.match(topicPattern);
+    return match ? match[2] : null;
+  };
+
+  // Find matching producer topics using fuzzy matching (same logic as backend)
+  const findMatchingProducerTopics = (consumerTopic, allProducerTopics) => {
+    const consumerMsPart = extractMicroserviceNameFromTopic(consumerTopic);
+    if (!consumerMsPart) return [];
+    
+    const normalizedConsumer = normalizeTopicName(consumerMsPart);
+    const matchingTopics = [];
+    
+    for (const producerTopic of allProducerTopics) {
+      const producerMsPart = extractMicroserviceNameFromTopic(producerTopic);
+      if (producerMsPart) {
+        const normalizedProducer = normalizeTopicName(producerMsPart);
+        if (normalizedConsumer === normalizedProducer) {
+          matchingTopics.push(producerTopic);
+        }
+      }
+    }
+    
+    return matchingTopics;
+  };
+
   // Find which service produces a specific topic
   const findTopicProducer = (topic) => {
     // Look for exact match first
@@ -34,26 +79,25 @@ const MicroserviceList = ({ microservices }) => {
       return producer;
     }
     
-    // If no exact match, try pattern matching for topic names
-    // Extract service name from the subscribed topic pattern
-    // e.g., "topics.payment.event" should match with service that produces "ecommerce.payment.event"
-    const topicParts = topic.split('.');
-    if (topicParts.length >= 2) {
-      const serviceName = topicParts[1]; // e.g., "payment" from "topics.payment.event"
-      
-      // Find service by name that produces any topic
-      producer = microservices.find(service => 
-        service.name === serviceName && service.produces && service.produces.length > 0
-      );
-      
-      if (producer) {
-        return producer;
+    // Use fuzzy matching with normalization (same as backend logic)
+    // Collect all producer topics
+    const allProducerTopics = [];
+    microservices.forEach(service => {
+      if (service.produces) {
+        service.produces.forEach(producedTopic => {
+          allProducerTopics.push(producedTopic);
+        });
       }
-      
-      // Alternatively, look for a service that produces a topic containing the service name
-      producer = microservices.find(service => 
-        service.produces && service.produces.some(producedTopic => 
-          producedTopic.includes(serviceName)
+    });
+    
+    // Find matching producer topics using fuzzy matching
+    const matchingProducerTopics = findMatchingProducerTopics(topic, allProducerTopics);
+    
+    if (matchingProducerTopics.length > 0) {
+      // Find the service that produces the first matching topic
+      producer = microservices.find(service =>
+        service.produces && service.produces.some(producedTopic =>
+          matchingProducerTopics.includes(producedTopic)
         )
       );
     }

@@ -18,7 +18,7 @@ class YAMLParser:
         #directory_path = "/app/projects/" + directory_path
 
         #this line for local testing only
-        #directory_path = os.path.abspath(directory_path)
+        directory_path = os.path.abspath(directory_path)
 
         if not os.path.exists(directory_path):
             raise FileNotFoundError(f"Directory not found: {directory_path}")
@@ -44,12 +44,13 @@ class YAMLParser:
                 # Count all produced and subscribed topics for this service
                 total_publish_subscribe_events += len(topics.produces) + len(topics.subscribes)
                 
+            # Create direct dependency arrows - service -> dependency
             for service, deps in ms_dependencies.items():
                 for dep in deps:
                     all_dependencies.append({
                         "name": dep,
                         "type": "microservice_dependency",
-                        "description": f"Microservice {service} depends on {dep}",
+                        "description": f"{service} depends on {dep}",
                         "service": service,
                         "version": "",
                         "category": "microservice"

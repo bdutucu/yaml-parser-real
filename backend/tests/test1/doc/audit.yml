@@ -17,7 +17,7 @@ paths:
             description: Events published by the Audit Service
       summary: User activity logged event
       description: |+
-        **topic:** `ecommerce.audit123.event`
+        **topic:** `ecommerce.audit.event`
         This event is published when a user activity is logged for audit purposes.
       requestBody:
         required: true

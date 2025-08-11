@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: recommendation-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  recommendation:
+    event: ecommerce.recommendation.event
+  user:
+    event: ecommerce.user.event
+  order:
+    event: ecommerce.order.event
+  analytics:
+    event: ecommerce.analytics.event
+
+consumers:
+  recommendationConsumer:
+    topics:
+      - ${topics.user.event}
+      - ${topics.order.event}
+      - ${topics.analytics.event}

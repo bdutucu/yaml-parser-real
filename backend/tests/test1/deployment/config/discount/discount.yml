@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: discount-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  discount:
+    event: ecommerce.discount.event
+  order:
+    event: ecommerce.order.event
+  user:
+    event: ecommerce.user.event
+  loyalty:
+    event: ecommerce.loyalty.event
+
+consumers:
+  discountConsumer:
+    topics:
+      - ${topics.order.event}
+      - ${topics.user.event}
+      - ${topics.loyalty.event}

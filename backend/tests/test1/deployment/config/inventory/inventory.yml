@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: inventory-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  order:
+    event: ecommerce.order.event
+  inventory:
+    event: ecommerce.inventory.event
+
+consumers:
+  inventoryConsumer:
+    topics:
+      - ${topics.random.event}

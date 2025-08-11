@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: loyalty-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  loyalty:
+    event: ecommerce.loyalty.event
+  user:
+    event: ecommerce.user.event
+  order:
+    event: ecommerce.order.event
+  payment:
+    event: ecommerce.payment.event
+
+consumers:
+  loyaltyConsumer:
+    topics:
+      - ${topics.user.event}
+      - ${topics.order.event}
+      - ${topics.payment.event}

@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: cart-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  cart:
+    event: ecommerce.cart.event
+  user:
+    event: ecommerce.user.event
+  catalog:
+    event: ecommerce.catalog.event
+  inventory:
+    event: ecommerce.inventory.event
+
+consumers:
+  cartConsumer:
+    topics:
+      - ${topics.user.event}
+      - ${topics.catalog.event}
+      - ${topics.inventory.event}

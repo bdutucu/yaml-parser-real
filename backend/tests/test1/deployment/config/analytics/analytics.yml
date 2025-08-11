@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: analytics-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  analytics:
+    event: ecommerce.analytics.event
+  user:
+    event: ecommerce.user.event
+  order:
+    event: ecommerce.order.event
+  payment:
+    event: ecommerce.payment.event
+
+consumers:
+  analyticsConsumer:
+    topics:
+      - ${topics.user.event}
+      - ${topics.order.event}
+      - ${topics.payment.event}
+      - ${topics.search.event}

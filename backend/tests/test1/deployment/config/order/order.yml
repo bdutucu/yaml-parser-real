@@ -1,0 +1,178 @@
+spring:
+  application:
+    name: nightmare-service-extreme-test
+  kafka:
+    bootstrap-servers: localhost:9092,kafka2:9092,kafka3:9092
+  profiles:
+    active: production
+
+topics:
+  payment:
+    event: ecommerce.payment.event
+    
+  order:
+    create:
+      event: ecommerce.order.create.event
+    update:
+      event: ecommerce.order.update.event
+    cancel:
+      event: ecommerce.order.cancel.event
+    
+  inventory:
+    warehouse:
+      stock:
+        low:
+          event: ecommerce.inventory.warehouse.stock.low.event
+        high:
+          event: ecommerce.inventory.warehouse.stock.high.event
+      location:
+        change:
+          event: ecommerce.inventory.warehouse.location.change.event
+    product:
+      added:
+        event: ecommerce.inventory.product.added.event
+      removed:
+        event: ecommerce.inventory.product.removed.event
+        
+  notification:
+    sms: ecommerce.notification.sms
+    email: ecommerce.notification.email.send
+    
+  analytics:
+    user:
+      behavior:
+        click.tracking.event: ecommerce.analytics.user.behavior.click.tracking.event
+        page.view.event: ecommerce.analytics.user.behavior.page.view.event
+        
+  weird:
+    empty:
+      event: ""
+    null_like:
+      event: null
+    special_chars:
+      event: ecommerce.special@chars#test$.event
+      
+  audit123:
+    log_v2:
+      event: ecommerce.audit123.log_v2.event
+      
+  super_long_topic_name_that_might_break_something:
+    very_nested:
+      deeply:
+        buried:
+          event: ecommerce.super_long_topic_name_that_might_break_something.very_nested.deeply.buried.event
+
+consumers:
+  mainConsumer:
+    topics:
+      - ${topics.payment.event}
+      - ${topics.order.create.event}
+      
+  inventoryConsumer:
+    topics:
+      - ${topics.inventory.warehouse.stock.low.event}
+      - ${topics.inventory.warehouse.stock.high.event}
+      - ${topics.inventory.warehouse.location.change.event}
+      - ${topics.inventory.product.added.event}
+      - ${topics.inventory.product.removed.event}
+      
+  analyticsConsumer:
+    topics:
+      - ${topics.analytics.user.behavior.click.tracking.event}
+      - ${topics.analytics.user.behavior.page.view.event}
+      
+  mixedConsumer:
+    topics:
+      - ${topics.notification.sms}
+      - ${topics.notification.email}
+      - ${topics.order.update.event}
+      - ecommerce.hardcoded.topic.event
+      - another.hardcoded.topic
+      
+  brokenConsumer:
+    topics:
+      - ${topics.nonexistent.event}
+      - ${topics.payment.nonexistent}
+      - ${invalid.placeholder}
+      - ${topics.weird.empty.event}
+      
+  specialConsumer:
+    topics:
+      - ${topics.special_chars.event}
+      - ${topics.audit123.log_v2.event}
+      - ${topics.super_long_topic_name_that_might_break_something.very_nested.deeply.buried.event}
+      
+  emptyConsumer:
+    topics: []
+    
+  malformedConsumer:
+    topics:
+      - ${topics.payment.event}
+      - ${topics.order.create.event
+      - topics.payment.event}
+      - ${topics..event}
+      - ${}
+      
+
+  duplicateConsumer:
+    topics:
+      - ${topics.payment.event}
+      - ${topics.payment.event}
+      - ecommerce.payment.event
+      - ${topics.order.create.event}
+      - ${topics.order.create.event}
+      
+
+  massiveConsumer:
+    topics:
+      - ${topics.payment.event}
+      - ${topics.order.create.event}
+      - ${topics.order.update.event}
+      - ${topics.order.cancel.event}
+      - ${topics.inventory.warehouse.stock.low.event}
+      - ${topics.inventory.warehouse.stock.high.event}
+      - ${topics.inventory.warehouse.location.change.event}
+      - ${topics.inventory.product.added.event}
+      - ${topics.inventory.product.removed.event}
+      - ${topics.analytics.user.behavior.click.tracking.event}
+      - ${topics.analytics.user.behavior.page.view.event}
+      - ${topics.audit123.log_v2.event}
+      - ecommerce.external.api.call.event
+      - ecommerce.external.webhook.received.event
+      - ecommerce.external.third.party.integration.event
+      - manually.typed.topic.without.placeholder
+      - another.manual.topic.event
+      - yet.another.hardcoded.topic
+      
+
+server:
+  port: 8080
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+        
+logging:
+  level:
+    com.example: DEBUG
+    org.apache.kafka: INFO
+
+
+random:
+  config:
+    topics: "this is not a real topics section"
+    consumers: "this is not a real consumers section"
+    event: "this might confuse the regex"
+    
+
+additional:
+  topics:
+    duplicate:
+      event: ecommerce.duplicate.event
+        
+additional_consumers:
+  anotherConsumer:
+    topics:
+      - ecommerce.additional.topic.event

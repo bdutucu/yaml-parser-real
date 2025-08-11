@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: review-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  review:
+    event: ecommerce.review.event
+  order:
+    event: ecommerce.order.event
+  user:
+    event: ecommerce.user.event
+  shipping:
+    event: ecommerce.shipping.event
+
+consumers:
+  reviewConsumer:
+    topics:
+      - ${topics.order.event}
+      - ${topics.user.event}
+      - ${topics.shipping.event}

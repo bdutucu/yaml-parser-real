@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: report-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  report:
+    event: ecommerce.report.event
+  analytics:
+    event: ecommerce.analytics.event
+  audit:
+    event: ecommerce.audit.event
+  order:
+    event: ecommerce.order.event
+
+consumers:
+  reportConsumer:
+    topics:
+      - ${topics.analytics.event}
+      - ${topics.audit.event}
+      - ${topics.order.event}
+      - ${topics.bugrahan.event}

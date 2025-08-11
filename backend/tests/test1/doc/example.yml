@@ -1,0 +1,626 @@
+openapi: 3.1.0
+info:
+  title: Example-Config API
+  description: The application programming interface of the Example-Config service.
+  version: "1.4"
+paths:
+  /example-config/get-default-entity-value-1:
+    post:
+      tags:
+        - Query
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/get-default-entity-value-1`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.query.GetDefaultEntityValue1ConfigQuery'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.query.GetDefaultEntityValue1ConfigQuery.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: '#/components/schemas/example.domain.exampleconfig.query.GenericError'
+                    Serialization: '#/components/schemas/example.domain.exampleconfig.query.SerializationError'
+                oneOf:
+                  - $ref: '#/components/schemas/example.domain.exampleconfig.query.GenericError'
+                  - $ref: '#/components/schemas/example.domain.exampleconfig.query.SerializationError'
+
+  /example-config/get-entity-value-2:
+    post:
+      tags:
+      - Query
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/get-entity-value-2`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue2ConfigQuery'
+      responses:
+        "200":
+        Success:
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue2ConfigQuery.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                    description: ""
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandError'
+                  - $ref: '#/components/schemas/example.errorhandling.SerializationErrorResult'
+
+
+  /example-config/get-entity-value-3:
+    post:
+      tags:
+        - Query
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/get-entity-value-3`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue3ConfigQuery'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue3ConfigQuery.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+
+  /example-config/get-entity-value-4:
+    post:
+      tags:
+        - Query
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/get-entity-value-4`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue4ConfigQuery'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue4ConfigQuery.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+
+  /example-config/get-entity-value-5:
+    post:
+      tags:
+        - Query
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/get-entity-value-5`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue5ConfigQuery'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.query.GetEntityValue5ConfigQuery.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+
+  /example-config/update-default-entity-value-1:
+    post:
+      tags:
+      - Command
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/update-default-entity-value-1`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateDefaultEntityValue1Command'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateDefaultEntityValue1Command.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+
+  /example-config/update-default-entity-value-2:
+    post:
+      tags:
+      - Command
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/update-default-entity-value-2`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateDefaultEntityValue2Command'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateDefaultEntityValue2Command.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+
+  /example-config/update-entity-value-3:
+    post:
+      tags:
+      - Command
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/update-entity-value-3`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateEntityValue3Command'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateEntityValue3Command.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+  
+  /example-config/update-entity-value-4:
+    post:
+      tags:
+      - Command
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/update-entity-value-4`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateEntityValue4Command'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateEntityValue4Command.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+  /example-Config/update-entity-value-5:
+    post:
+      tags:
+      - Command
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.command`<br><br>**Path:** `/example-config/update-entity-value-5`
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateEntityValue5Command'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/example.domain.exampleconfig.command.UpdateEntityValue5Command.Result'
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                title: CommandErrorResult
+                required:
+                  - description
+                  - domain
+                properties:
+                  domain:
+                    type: string
+                    description: Type Discriminator property for subtypes of `CommandErrorResult`
+                    nullable: false
+                    enum:
+                      - Generic
+                      - Serialization
+                  description:
+                    type: string
+                    description: A description of the error.
+                    nullable: false
+                discriminator:
+                  propertyName: domain
+                  mapping:
+                    Generic: GenericCommandErrorResult
+                    Serialization: CommandSerializationErrorResult
+                oneOf:
+                  - $ref: '#/components/schemas/example.errorhandling.GenericCommandErrorResult'
+                  - $ref: '#/components/schemas/example.errorhandling.CommandSerializationErrorResult'
+
+  /example-config/default-entity-value-1-updated:
+    post:
+      tags:
+      - Domain Event
+      summary: ""
+      description: |+
+        **Topic:** `example.denemeTopic.event`<br><br>**Title:** `/example-config/default-entity-value-1-updated`
+
+      responses:
+      default:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/example.domain.exampleconfig.event.DefaultEntityValue1UpdatedDomainEvent'
+
+  /example-config/entity-value-2-updated:
+    post:
+      tags:
+      - Domain Event
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.event`<br><br>**Title:** `/example-config/entity-value-2-updated`
+
+      responses:
+      default:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/example.domain.exampleconfig.event.EntityValue2UpdatedDomainEvent'
+
+  /example-config/entity-value-3-updated:
+    post:
+      tags:
+      - Domain Event
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.event`<br><br>**Title:** `/example-config/entity-value-3-updated`
+
+      responses:
+      default:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/example.domain.exampleconfig.event.EntityValue3Upd
+
+  /example-config/entity-value-4-updated:
+    post:
+      tags:
+      - Domain Event
+      summary: ""
+      description: |+
+        **Topic:** `example.reco-config.event`<br><br>**Title:** `/example-config/entity-value-4-updated`
+
+      responses:
+      default:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/example.domain.exampleconfig.event.EntityValue4UpdatedDomainEvent'
+
+  /example-config/entity-value-5-updated:
+    post:
+      tags:
+      - Domain Event
+      summary: ""
+      description: |+
+        **Topic:** `example.example-config.event`<br><br>**Title:** `/example-config/entity-value-5-updated`
+
+      responses:
+      default:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/example.domain.exampleconfig.event.EntityValue5UpdatedDomainEvent'
+
+  components:
+    schemas:
+      example.errorhandling.CommandSerializationErrorResult:
+      title: CommandSerializationErrorResult
+      required:
+      - description
+      - domain
+      - location
+      properties: 
+      domain: 
+        type: string
+        description: always equals to `"Serialization"`.
+        nullable: false
+        enum:
+        - Serialization
+      description:
+        type: string
+        description: "Concise, user friendly description of the error used mainly for debugging and logging purposes."
+        nullable: false
+      location:
+        type: string
+        description: location of Serialization error.
+        nullable: false
+      description: ""            
+  
+  example.domain.exampleconfig.event.DefaultEntityValue1UpdatedDomainEvent:
+      title: DefaultEntityValue1UpdatedDomainEvent
+      required:
+      - defaultEntityValue1
+      properties:
+        defaultEntityValue1:
+          type: integer
+          description: "type description. valid range is [1,30]."
+          format: int32
+          nullable: false
+      description: ""
+      
+  example.errorhandling.GenericCommandErrorResult:

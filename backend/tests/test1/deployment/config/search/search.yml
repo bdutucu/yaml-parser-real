@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: search-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  search:
+    event: ecommerce.search.event
+  catalog:
+    event: ecommerce.catalog.event
+  user:
+    event: ecommerce.user.event
+  analytics:
+    event: ecommerce.analytics.event
+
+consumers:
+  searchConsumer:
+    topics:
+      - ${topics.catalog.event}
+      - ${topics.user.event}
+      - ${topics.analytics.event}

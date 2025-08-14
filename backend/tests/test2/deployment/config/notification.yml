@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  notification:
+    event: ecommerce.notification.event
+  order:
+    event: ecommerce.order.event
+  payment:
+    event: ecommerce.payment.event
+    refund:
+      event: ecommerce.payment.refund.event
+  user:
+    event: ecommerce.user.event
+
+consumers:
+  notificationConsumer:
+    topics:
+      - ${topics.order.event}
+      - ${topics.payment.event}
+      - ${topics.user.event}
+      - ${topics.payment.refund.event}

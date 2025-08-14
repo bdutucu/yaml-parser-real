@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: shipping-service
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topics:
+  shipping:
+    event: ecommerce.shipping.event
+  order:
+    event: ecommerce.order.event
+  payment:
+    event: ecommerce.payment.event
+    refund:
+      event: ecommerce.payment.refund.event
+
+consumers:
+  shippingConsumer:
+    topics:
+      - ${topics.order.event}
+      - ${topics.payment.event}
+      - ${topics.payment.refund.event}

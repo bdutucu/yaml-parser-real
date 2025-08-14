@@ -1,6 +1,7 @@
+name: yaml-parser
 services:
   backend:
-    image: bdutucu/yaml-parser-backend:latest
+    image: bdutucu/yaml-parser-backend:v1.1
     container_name: yaml-parser-backend
     ports:
       - "5000:5000"
@@ -9,7 +10,7 @@ services:
       # Windows example: C:\Users\username\Desktop\my-projects:/app/projects
       # Linux/Mac example: /home/username/projects:/app/projects
       #change user
-      - C:\Users\user\Desktop:/app/projects
+      - C:\Users\hakim\Desktop:/app/projects
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=0
@@ -18,7 +19,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: bdutucu/yaml-parser-frontend:latest
+    image: bdutucu/yaml-parser-frontend:v1.1
     container_name: yaml-parser-frontend
     ports:
       - "3000:3000"

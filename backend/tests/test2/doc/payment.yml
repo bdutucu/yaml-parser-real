@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: Payment Service API
+  version: 1.0.0
+  description: API documentation for the Payment Service, including domain events.
+
+servers:
+  - url: http://localhost:8081
+    description: Local Payment Service
+
+paths:
+  /payment/processed:
+    post:
+      tags:
+        - DomainEvent:
+            name: Payment Event 1
+            description: Events published by the Payment Service
+      summary: Payment processed event
+      description: |+
+        **topic:** `ecommerce.payment.event`
+        This event is published when a payment is successfully processed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paymentId:
+                  type: string
+                orderId:
+                  type: string
+                status:
+                  type: string
+                  example: "COMPLETED"
+                transactionDate:
+                  type: string
+                  format: date-time
+      responses:
+        '202':
+          description: Event successfully acknowledged (this endpoint is for documentation purposes for produced events)
+
+  /payment/refunded:
+    post:
+      tags:
+        - DomainEvent:
+            name: Payment Event 2
+            description: Events published by the Payment Service
+      summary: Payment refunded event
+      description: |+
+        **topic:** 'ecommerce.payment.event'
+        This event is published when a payment refund is successfully processed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refundId:
+                  type: string
+                paymentId:
+                  type: string
+                orderId:
+                  type: string
+                refundAmount:
+                  type: number
+                  format: float
+                reason:
+                  type: string
+                  example: "Customer request"
+                status:
+                  type: string
+                  example: "REFUNDED"
+                refundDate:
+                  type: string
+                  format: date-time
+      responses:
+        '202':
+          description: Event successfully acknowledged (this endpoint is for documentation purposes for produced events)        

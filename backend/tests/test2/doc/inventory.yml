@@ -1,0 +1,42 @@
+openapi: 3.0.0
+info:
+  title: Inventory Service API
+  version: 1.0.0
+  description: API documentation for the Inventory Service, including domain events.
+
+servers:
+  - url: http://localhost:8082
+    description: Local Inventory Service
+
+paths:
+  /inventory/updated:
+    post:
+      tags:
+        - DomainEvent:
+            name: Inventory Events
+            description: Events published by the Inventory Service
+      summary: Inventory updated event
+      description: |+
+        **topic:** `ecommerce.inventory.event`
+        This event is published when product inventory is updated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inventoryId:
+                  type: string
+                productId:
+                  type: string
+                quantityAvailable:
+                  type: integer
+                quantityReserved:
+                  type: integer
+                lastUpdated:
+                  type: string
+                  format: date-time
+      responses:
+        '202':
+          description: Event successfully acknowledged (this endpoint is for documentation purposes for produced events)
